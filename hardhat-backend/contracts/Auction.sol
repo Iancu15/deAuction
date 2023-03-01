@@ -2,18 +2,20 @@
 
 pragma solidity ^0.8.7;
 
-error Auction__BidBelowMinimumBid(uint256 bid, uint256 minimumBid);
+error Auction__BidBelowMinimumBid(uint256 amountSent, uint256 minimumBid, uint256 collateralAmount);
+error Auction__ZeroStartingBid(uint256 amountSent, uint256 collateralAmount);
+error Auction__RedundantZeroBidIncrease();
+error Auction__DidntCoverCollateral(uint256 amountSent, uint256 collateralAmount);
 error Auction__HighestBidderCantWithdraw();
 error Auction__TransactionFailed();
 error Auction__MaximumNumbersOfBiddersReached(uint256 maximumNumberOfBidders);
-error Auction__SellerCantEnterAuction();
+error Auction__SellerCantCallFunction();
 error Auction__DidntEnterAuction();
 error Auction__AuctionIsStillOpen();
 error Auction__RoutingReservedForHighestBidder();
 error Auction__OnlySellerCanCallFunction();
 
 // TO DO
-// destroy function (maybe let seller destroy preemptevely)
 // timer (after x time to close the auction)
 
 contract Auction {
@@ -27,35 +29,72 @@ contract Auction {
     address private immutable i_seller;
     uint256 private immutable i_minimumBid;
     uint256 private immutable i_maximumNumberOfBidders;
+    uint256 private immutable i_auctioneerCollateralAmount;
+    uint256 private immutable i_sellerCollateralAmount;
 
 
-    constructor(uint256 minimumBid, uint256 maximumNumberOfBidders) {
+    constructor(uint256 minimumBid, uint256 maximumNumberOfBidders, uint256 auctioneerCollateralAmount) {
         i_minimumBid = minimumBid;
         i_seller = msg.sender;
         i_maximumNumberOfBidders = maximumNumberOfBidders;
+        i_auctioneerCollateralAmount = auctioneerCollateralAmount;
+        i_sellerCollateralAmount = msg.value;
         s_isOpen = true;
         s_currentNumberOfBidders = 0;
     }
 
-    function enterAuction() public payable {
-        if (msg.sender == i_seller) {
-            revert Auction__SellerCantEnterAuction();
+    modifier auctionClosed {
+        if (s_isOpen) {
+            revert Auction__AuctionIsStillOpen();
         }
+        _;
+    }
 
+    modifier onlySeller {
+        if (msg.sender != i_seller) {
+            revert Auction__OnlySellerCanCallFunction();
+        }
+        _;
+    }
+
+    modifier notSeller {
+        if (msg.sender == i_seller) {
+            revert Auction__SellerCantCallFunction();
+        }
+        _;
+    }
+
+    function enterAuction() notSeller public payable {
         if (s_currentNumberOfBidders == i_maximumNumberOfBidders) {
             revert Auction__MaximumNumbersOfBiddersReached(i_maximumNumberOfBidders);
         }
 
-        if (msg.value < i_minimumBid) {
-            revert Auction__BidBelowMinimumBid({
+        if (msg.value < i_auctioneerCollateralAmount) {
+            revert Auction__DoesntCoverCollateral({
                 bid: msg.value,
-                minimumBid: i_minimumBid
+                collateralAmount: i_auctioneerCollateralAmount
             });
         }
 
-        s_auctioneerToCurrentBid[msg.sender] = msg.value;
+        uint256 startingBid = msg.value - i_auctioneerCollateralAmount;
+        if (startingBid == 0) {
+            revert Auction__ZeroStartingBid({
+                bid: msg.value,
+                collateralAmount: i_auctioneerCollateralAmount
+            });
+        }
+
+        if (startingBid < i_minimumBid) {
+            revert Auction__BidBelowMinimumBid({
+                bid: msg.value,
+                minimumBid: i_minimumBid,
+                collateralAmount: i_auctioneerCollateralAmount
+            });
+        }
+
+        s_auctioneerToCurrentBid[msg.sender] = startingBid;
         if (msg.value > s_currentHighestBid) {
-            s_currentHighestBid = msg.value;
+            s_currentHighestBid = startingBid;
             s_currentHighestBidder = msg.sender;
         }
 
@@ -67,6 +106,10 @@ contract Auction {
         uint256 currentBid = s_auctioneerToCurrentBid[msg.sender];
         if (currentBid == 0) {
             revert Auction__DidntEnterAuction();
+        }
+
+        if (msg.value == 0) {
+            revert Auction__RedundantZeroBidIncrease();
         }
 
         currentBid += msg.value;
@@ -89,7 +132,7 @@ contract Auction {
 
         s_auctioneerToCurrentBid[msg.sender] = 0;
         s_currentNumberOfBidders -= 1;
-        (bool success, ) = payable(msg.sender).call{value: currentBid}("");
+        (bool success, ) = payable(msg.sender).call{value: currentBid + i_auctioneerCollateralAmount}("");
         if (!success) {
             revert Auction__TransactionFailed();
         }
@@ -111,7 +154,7 @@ contract Auction {
             }
 
             s_auctioneerToCurrentBid[auctioneer] = 0;
-            (bool success, ) = payable(auctioneer).call{value: bid}("");
+            (bool success, ) = payable(auctioneer).call{value: bid + i_auctioneerCollateralAmount}("");
             if (!success) {
                 revert Auction__TransactionFailed();
             }
@@ -128,6 +171,15 @@ contract Auction {
             revert Auction__TransactionFailed();
         }
 
+        (success, ) = payable(s_currentHighestBidder).call{value: i_auctioneerCollateralAmount}("");
+        if (!success) {
+            revert Auction__TransactionFailed();
+        }
+
+        destroyContract();
+    }
+
+    function burnAllStoredValue() public auctionClosed onlySeller {
         destroyContract();
     }
 
@@ -135,21 +187,11 @@ contract Auction {
         selfdestruct(payable(address(this)));
     }
 
-    modifier auctionClosed {
-        if (s_isOpen) {
-            revert Auction__AuctionIsStillOpen();
-        }
-        _;
+    function getAuctionWinner() public auctionClosed onlySeller view returns (address) {
+        return s_currentHighestBidder;
     }
 
-    modifier onlySeller {
-        if (msg.sender != i_seller) {
-            revert Auction__OnlySellerCanCallFunction();
-        }
-        _;
-    }
-
-    function getMyCurrentBid() public view returns (uint256) {
+    function getMyCurrentBid() notSeller public view returns (uint256) {
         return s_auctioneerToCurrentBid[msg.sender];
     }
 
@@ -161,7 +203,7 @@ contract Auction {
         return s_currentHighestBid;
     }
 
-    function doIHaveTheHighestBid() public view returns (bool) {
+    function doIHaveTheHighestBid() notSeller public view returns (bool) {
         return (msg.sender == s_currentHighestBidder);
     }
 
@@ -179,6 +221,14 @@ contract Auction {
 
     function getNumberOfBidders() public view returns (uint256) {
         return s_currentNumberOfBidders;
+    }
+
+    function getAuctioneerCollateralAmount() public view returns (uint256) {
+        return i_auctioneerCollateralAmount;
+    }
+
+    function getSellerCollateralAmount() public view returns (uint256) {
+        return i_auctioneerCollateralAmount;
     }
 
 }
