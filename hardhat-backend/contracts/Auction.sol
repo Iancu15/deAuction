@@ -33,7 +33,7 @@ contract Auction {
     uint256 private immutable i_sellerCollateralAmount;
 
 
-    constructor(uint256 minimumBid, uint256 maximumNumberOfBidders, uint256 auctioneerCollateralAmount) {
+    constructor(uint256 minimumBid, uint256 maximumNumberOfBidders, uint256 auctioneerCollateralAmount) payable {
         i_minimumBid = minimumBid;
         i_seller = msg.sender;
         i_maximumNumberOfBidders = maximumNumberOfBidders;
@@ -70,8 +70,8 @@ contract Auction {
         }
 
         if (msg.value < i_auctioneerCollateralAmount) {
-            revert Auction__DoesntCoverCollateral({
-                bid: msg.value,
+            revert Auction__DidntCoverCollateral({
+                amountSent: msg.value,
                 collateralAmount: i_auctioneerCollateralAmount
             });
         }
@@ -79,21 +79,21 @@ contract Auction {
         uint256 startingBid = msg.value - i_auctioneerCollateralAmount;
         if (startingBid == 0) {
             revert Auction__ZeroStartingBid({
-                bid: msg.value,
+                amountSent: msg.value,
                 collateralAmount: i_auctioneerCollateralAmount
             });
         }
 
         if (startingBid < i_minimumBid) {
             revert Auction__BidBelowMinimumBid({
-                bid: msg.value,
+                amountSent: msg.value,
                 minimumBid: i_minimumBid,
                 collateralAmount: i_auctioneerCollateralAmount
             });
         }
 
         s_auctioneerToCurrentBid[msg.sender] = startingBid;
-        if (msg.value > s_currentHighestBid) {
+        if (startingBid > s_currentHighestBid) {
             s_currentHighestBid = startingBid;
             s_currentHighestBidder = msg.sender;
         }
@@ -223,12 +223,16 @@ contract Auction {
         return s_currentNumberOfBidders;
     }
 
+    function getMaximumNumberOfBidders() public view returns (uint256) {
+        return i_maximumNumberOfBidders;
+    }
+
     function getAuctioneerCollateralAmount() public view returns (uint256) {
         return i_auctioneerCollateralAmount;
     }
 
     function getSellerCollateralAmount() public view returns (uint256) {
-        return i_auctioneerCollateralAmount;
+        return i_sellerCollateralAmount;
     }
 
 }
