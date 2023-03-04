@@ -166,7 +166,7 @@ contract Auction {
             revert Auction__RoutingReservedForHighestBidder();
         }
 
-        (bool success, ) = payable(i_seller).call{value: s_currentHighestBid}("");
+        (bool success, ) = payable(i_seller).call{value: s_currentHighestBid + i_sellerCollateralAmount}("");
         if (!success) {
             revert Auction__TransactionFailed();
         }
