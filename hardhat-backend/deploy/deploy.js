@@ -3,7 +3,6 @@ const { network, ethers } = require("hardhat")
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy, log } = deployments
     const { seller } = await getNamedAccounts()
-    const chainId = network.config.chainId
     const minimumBid = ethers.utils.parseEther("0.01")
     const maximumNumberOfBidders = 5
     const auctioneerCollateralAmount = ethers.utils.parseEther("0.1")

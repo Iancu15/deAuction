@@ -1,17 +1,11 @@
-# TEMP
-contracts/Lock.sol
-test/Lock.js
-scripts/deploy.js
-README-lock.md
-
 node_modules
 .env
 coverage
 coverage.json
 typechain
 typechain-types
+gas-report.txt
 
 # Hardhat files
 cache
 artifacts
-
