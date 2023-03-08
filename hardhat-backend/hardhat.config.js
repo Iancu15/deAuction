@@ -5,23 +5,38 @@ require("dotenv").config()
 require("solidity-coverage")
 require("hardhat-deploy")
 
-/** @type import('hardhat/config').HardhatUserConfig */
+const COMPILER_SETTINGS = {
+    optimizer: {
+        enabled: true,
+        runs: 1000000,
+    },
+    metadata: {
+        bytecodeHash: "none",
+    },
+}
+
 module.exports = {
     defaultNetwork: "hardhat",
     networks: {
         hardhat: {
             chainId: 31337,
-            // gasPrice: 130000000000,
+            blockConfirmations: 1
         }
     },
     solidity: {
         compilers: [
             {
                 version: "0.8.7",
+                COMPILER_SETTINGS
             },
             {
                 version: "0.6.6",
-            }
+                COMPILER_SETTINGS
+            },
+            {
+                version: "0.4.24",
+                COMPILER_SETTINGS
+            },
         ]
     },
     namedAccounts: {
@@ -30,8 +45,9 @@ module.exports = {
         }
     },
     gasReporter: {
-        enabled: false,
+        enabled: true,
         currency: "USD",
-        outputFile: "gas-report.txt"
+        outputFile: "gas-report.txt",
+        noColors: true
     }
 };

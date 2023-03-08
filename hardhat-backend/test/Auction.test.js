@@ -2,6 +2,8 @@ const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const COLLATERAL_AMOUNT = ethers.utils.parseEther("0.1")
 const MINIMUM_BID = ethers.utils.parseEther("0.01")
+const INTERVAL = 7 * 24 * 3600
+const DAY = 24 * 3600
 
 async function equal(a, b) {
     assert.equal((await a).toString(), b.toString())
@@ -59,6 +61,21 @@ describe("Auction", function () {
         await equal(getBalance(accountIndex), expectedBalance.sub(gasCost))
     }
 
+    async function increaseTime(time) {
+        await network.provider.send("evm_increaseTime", [time])
+        await network.provider.request({ method: "evm_mine", params: [] })
+    }
+
+    async function closeAuction() {
+        await increaseTime(DAY)
+        return await auction.closeAuction()
+    }
+
+    async function assertTime(time, expectedTimeFactor) {
+        assert(time >= DAY * (expectedTimeFactor - 0.1))
+        assert(time < DAY * (expectedTimeFactor + 0.1))
+    }
+
     beforeEach(async () => {
         accounts = await ethers.getSigners()
         auctioneer1 = accounts[1]
@@ -76,7 +93,10 @@ describe("Auction", function () {
             await equal(auction.getNumberOfBidders(), 0)
             await equal(auction.getMaximumNumberOfBidders(), 5)
             await equal(auction.getSellerCollateralAmount(), COLLATERAL_AMOUNT)
-        }) 
+            await equal(auction.getInterval(), INTERVAL)
+            await equal(auction.getOpenThreshold(), DAY)
+            await equal(auction.getClosedInterval(), INTERVAL)
+        })
     })
 
     describe("enterAuction", function () {
@@ -174,6 +194,19 @@ describe("Auction", function () {
             ).to.be.revertedWithCustomError(
                 auction,
                 "Auction__MaximumNumbersOfBiddersReached"
+            )
+        })
+
+        it("fails when auction is closed", async () => {
+            await auctioneer1EnterAuction();
+            await closeAuction();
+            await expect(auction.connect(accounts[2]).enterAuction(
+                {
+                    value: ethers.utils.parseEther("0.15")
+                })
+            ).to.be.revertedWithCustomError(
+                auction,
+                "Auction__AuctionIsClosed"
             )
         })
     })
@@ -292,14 +325,21 @@ describe("Auction", function () {
             )
         })
 
+        it("fails when threshold timestamp wasn't reached", async () => {
+            await expect(auction.closeAuction()).to.be.revertedWithCustomError(
+                auction,
+                "Auction__ThresholdNotReached"
+            )
+        })
+
         it("destroys the contract if there are no bids", async () => {
-            await auction.closeAuction()
+            await closeAuction()
             await equal(isContractDestroyed(), true)
         })
 
         it("closes the auction", async () => {
             await auctioneer1EnterAuction()
-            await auction.closeAuction()
+            await closeAuction()
             await equal(auction.isOpen(), false)
         })
 
@@ -319,7 +359,7 @@ describe("Auction", function () {
             balances[1] = await getBalance(1)
             transactionResponse = await auctioneer1EnterAuction()
             gasCosts[1] = await getGasCost(transactionResponse)
-            await auction.closeAuction()
+            await closeAuction()
             for (let index = 2; index <= 5; index++) {
                 await checkBalance(index, balances[index], gasCosts[index])
                 await equal(auction.connect(accounts[index]).getMyCurrentBid(), 0)
@@ -345,7 +385,7 @@ describe("Auction", function () {
                 value: ethers.utils.parseEther("0.15")
             })
 
-            await auction.closeAuction()
+            await closeAuction()
             await expect(
                 auction.connect(accounts[2]).routeHighestBid()
             ).to.be.revertedWithCustomError(
@@ -357,18 +397,17 @@ describe("Auction", function () {
         it("sends money to the seller", async () => {
             const balanceSeller = await getBalance(0)
             await auctioneer1EnterAuction()
-            const transactionResponse = await auction.closeAuction()
+            const transactionResponse = await closeAuction()
             const gasCost = await getGasCost(transactionResponse)
             await auction.connect(auctioneer1).routeHighestBid()
             await checkBalance(0, balanceSeller.add(ethers.utils.parseEther("0.3")), gasCost)
         })
 
-        // add check for cotract balance 0
         it("sends collateral back to highest bidder", async () => {
             const balanceAuctioneer = await getBalance(1)
             let transactionResponse = await auctioneer1EnterAuction()
             let gasCost = await getGasCost(transactionResponse)
-            await auction.closeAuction()
+            await closeAuction()
             transactionResponse = await auction.connect(auctioneer1).routeHighestBid()
             gasCost = gasCost.add(await getGasCost(transactionResponse))
             await checkBalance(1, balanceAuctioneer.sub(ethers.utils.parseEther("0.2")), gasCost)
@@ -376,7 +415,7 @@ describe("Auction", function () {
 
         it("destroys the contract", async () => {
             await auctioneer1EnterAuction()
-            await auction.closeAuction()
+            await closeAuction()
             equal(isContractDestroyed(), false)
             await auction.connect(auctioneer1).routeHighestBid()
             equal(isContractDestroyed(), true)
@@ -395,7 +434,7 @@ describe("Auction", function () {
 
         it("fails when is called by an auctioneer", async () => {
             await auctioneer1EnterAuction()
-            await auction.closeAuction()
+            await closeAuction()
             await expect(
                 auction.connect(auctioneer1).burnAllStoredValue()
             ).to.be.revertedWithCustomError(
@@ -406,7 +445,7 @@ describe("Auction", function () {
 
         it("destroys the contract", async () => {
             await auctioneer1EnterAuction()
-            await auction.closeAuction()
+            await closeAuction()
             equal(isContractDestroyed(), false)
             await auction.burnAllStoredValue()
             equal(isContractDestroyed(), true)
@@ -425,7 +464,7 @@ describe("Auction", function () {
 
         it("fails when is called by an auctioneer", async () => {
             await auctioneer1EnterAuction()
-            await auction.closeAuction()
+            await closeAuction()
             await expect(
                 auction.connect(auctioneer1).getAuctionWinner()
             ).to.be.revertedWithCustomError(
@@ -442,7 +481,7 @@ describe("Auction", function () {
             }
 
             await auctioneer1EnterAuction()
-            await auction.closeAuction()
+            await closeAuction()
             assert.equal(await auction.connect(seller).getAuctionWinner(), auctioneer1.address)
             for (let index = 2; index <= 5; index++) {
                 assert.notEqual(await auction.connect(seller).getAuctionWinner(), accounts[index].address)
@@ -475,6 +514,189 @@ describe("Auction", function () {
                 auction,
                 "Auction__SellerCantCallFunction"
             )
+        })
+    })
+
+    describe("getTimeUntilClosing", function () {
+        it("fails when auction is closed", async () => {
+            await auctioneer1EnterAuction()
+            await closeAuction()
+            await expect(auction.getTimeUntilClosing()
+            ).to.be.revertedWithCustomError(
+                auction,
+                "Auction__AuctionIsClosed"
+            )
+        })
+
+        it("returns time until closing", async () => {
+            assertTime(await auction.getTimeUntilClosing(), 7)
+            await increaseTime(DAY * 0.5)
+            assertTime(await auction.getTimeUntilClosing(), 6.5)
+            await increaseTime(DAY * 2.5)
+            assertTime(await auction.getTimeUntilClosing(), 4.5)
+        })
+    })
+
+    describe("getCloseTimestamp", function () {
+        it("fails when auction is open", async () => {
+            await expect(auction.getCloseTimestamp()
+            ).to.be.revertedWithCustomError(
+                auction,
+                "Auction__AuctionIsStillOpen"
+            )
+        })
+
+        it("returns timestamp around the time it closed", async () => {
+            await auctioneer1EnterAuction()
+            await increaseTime(DAY * 3)
+            await auction.closeAuction()
+            assertTime((await auction.getCloseTimestamp()) - (await auction.getStartTimestamp()), 3)
+        })
+    })
+
+    describe("getTimePassedSinceAuctionClosed", function () {
+        it("fails when auction is open", async () => {
+            await expect(auction.getTimePassedSinceAuctionClosed()
+            ).to.be.revertedWithCustomError(
+                auction,
+                "Auction__AuctionIsStillOpen"
+            )
+        })
+
+        it("returns time passed since auction closed", async () => {
+            await auctioneer1EnterAuction()
+            await closeAuction()
+            await increaseTime(DAY * 6)
+            assertTime(await auction.getTimePassedSinceAuctionClosed(), 6)
+
+        })
+    })
+
+    describe("getTimeUntilDestroy", function () {
+        it("fails when auction is open", async () => {
+            await expect(auction.getTimeUntilDestroy()
+            ).to.be.revertedWithCustomError(
+                auction,
+                "Auction__AuctionIsStillOpen"
+            )
+        })
+
+        it("gets time until auction contract is destroyed", async () => {
+            await auctioneer1EnterAuction()
+            await closeAuction()
+            await increaseTime(DAY * 4)
+            assertTime(await auction.getTimeUntilDestroy(), 3)
+        })
+    })
+
+    describe("getTimeUntilThreshold", function () {
+        it("returns 0 when when the threshold is reached", async () => {
+            assert.notEqual(await auction.getTimeUntilThreshold(), 0)
+            await increaseTime(DAY * 0.5)
+            assert.notEqual(await auction.getTimeUntilThreshold(), 0)
+            await increaseTime(DAY * 0.5)
+            assertTime(await auction.getTimeUntilThreshold(), 0)
+            await increaseTime(DAY * 2)
+            await equal(auction.getTimeUntilThreshold(), 0)
+        })
+    })
+
+    describe("getTimePassedSinceStart", function () {
+        it("returns the time passed since start timestamp", async () => {
+            await equal(auction.getTimePassedSinceStart(), 0)
+            await increaseTime(DAY * 0.5)
+            assertTime(await auction.getTimePassedSinceStart(), 0.5)
+            await increaseTime(DAY * 2.5)
+            assertTime(await auction.getTimePassedSinceStart(), 3)
+        })
+    })
+
+    describe("canICloseAuction", function () {
+        it("fails when is called by an auctioneer", async () => {
+            await expect(auction.connect(auctioneer1).canICloseAuction()
+            ).to.be.revertedWithCustomError(
+                auction,
+                "Auction__OnlySellerCanCallFunction"
+            )
+        })
+
+        it("returns true when when the threshold is reached", async () => {
+            await equal(auction.canICloseAuction(), false)
+            await increaseTime(DAY * 0.5)
+            await equal(auction.canICloseAuction(), false)
+            await increaseTime(DAY)
+            await equal(auction.canICloseAuction(), true)
+            await increaseTime(DAY * 2)
+            await equal(auction.canICloseAuction(), true)
+        })
+    })
+
+    describe("checkUpkeep", function () {
+        it("it returns true if auction is open and interval passed", async () => {
+            const { upkeepNeeded: upkeepNeeded1 } = await auction.callStatic.checkUpkeep("0x")
+            assert(!upkeepNeeded1)
+            await increaseTime(INTERVAL)
+            const { upkeepNeeded: upkeepNeeded2 } = await auction.callStatic.checkUpkeep("0x")
+            assert(upkeepNeeded2)
+        })
+
+        it("it returns true if auction is closed and closed interval passed", async () => {
+            await auctioneer1EnterAuction()
+            await closeAuction()
+            const { upkeepNeeded: upkeepNeeded1 } = await auction.callStatic.checkUpkeep("0x")
+            assert(!upkeepNeeded1)
+            await increaseTime(INTERVAL)
+            const { upkeepNeeded: upkeepNeeded2 } = await auction.callStatic.checkUpkeep("0x")
+            assert(upkeepNeeded2)
+        })
+    })
+
+    describe("performUpkeep", function () {
+        it("fails when auction is open and interval hasn't passed", async () => {
+            await expect(auction.performUpkeep("0x")
+            ).to.be.revertedWithCustomError(
+                auction,
+                "Auction__UpkeepNotNeeded"
+            )
+        })
+
+        it("fails when auction is closed and closed interval hasn't passed", async () => {
+            await auctioneer1EnterAuction()
+            await closeAuction()
+            await expect(auction.performUpkeep("0x")
+            ).to.be.revertedWithCustomError(
+                auction,
+                "Auction__UpkeepNotNeeded"
+            )
+        })
+
+        it("closes the auction if auction is open and interval has passed", async () => {
+            await auctioneer1EnterAuction()
+            await increaseTime(INTERVAL)
+            await auction.performUpkeep("0x")
+            assert(!(await auction.isOpen()))
+        })
+
+        it("destroys the contract if auction is closed and closed interval has passed", async () => {
+            await auctioneer1EnterAuction()
+            await closeAuction()
+            await increaseTime(INTERVAL)
+            await auction.performUpkeep("0x")
+            assert(await isContractDestroyed())
+        })
+    })
+
+    describe("getContractBalance", function () {
+        it("returns the balance of the contract", async () => {
+            for (let index = 1; index <= 5; index++) {
+                await auction.connect(accounts[index]).enterAuction({
+                    value: ethers.utils.parseEther("0.2")
+                })
+            }
+
+            await equal(auction.getContractBalance(), ethers.utils.parseEther("1.1"))
+            await closeAuction()
+            await equal(auction.getContractBalance(), ethers.utils.parseEther("0.3"))
         })
     })
 })
