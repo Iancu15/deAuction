@@ -1,14 +1,9 @@
-import Head from "next/head";
+import Auction from "../components/Auction";
 
 export default function Home() {
   return (
     <div>
-      <Head>
-        <title>Auction</title>
-        <meta name="description" content="Auction app" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <h1 stlye="center">Hello World!</h1>
+      <Auction />
     </div>
-  );
+  )
 }
