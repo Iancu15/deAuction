@@ -21,6 +21,7 @@ error Auction__AuctionIsClosed();
 error Auction__ThresholdNotReached(uint256 timeUntilThreshold);
 error Auction__UpkeepNotNeeded();
 error Auction__IntervalAboveMaximum(uint256 interval, uint256 maxInterval);
+error Auction__AlreadyEnteredAuction();
 
 contract Auction is AutomationCompatibleInterface {
     mapping(address => uint256) private s_auctioneerToCurrentBid;
@@ -95,6 +96,10 @@ contract Auction is AutomationCompatibleInterface {
     }
 
     function enterAuction() public payable notSeller auctionOpen {
+        if (s_auctioneerToCurrentBid[msg.sender] > 0) {
+            revert Auction__AlreadyEnteredAuction();
+        }
+
         if (s_currentNumberOfBidders == i_maximumNumberOfBidders) {
             revert Auction__MaximumNumbersOfBiddersReached(
                 i_maximumNumberOfBidders
@@ -230,8 +235,6 @@ contract Auction is AutomationCompatibleInterface {
     function burnAllStoredValue() public auctionClosed onlySeller {
         destroyContract();
     }
-
-    event test(uint256 val);
 
     function checkUpkeep(bytes memory)
         public

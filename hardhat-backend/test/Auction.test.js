@@ -209,6 +209,18 @@ describe("Auction", function () {
                 "Auction__AuctionIsClosed"
             )
         })
+
+        it("fails when auctioneer entered auction", async () => {
+            await auctioneer1EnterAuction();
+            await expect(auction.connect(auctioneer1).enterAuction(
+                {
+                    value: ethers.utils.parseEther("0.15")
+                })
+            ).to.be.revertedWithCustomError(
+                auction,
+                "Auction__AlreadyEnteredAuction"
+            )
+        })
     })
 
     describe("increaseBid", function () {

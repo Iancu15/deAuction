@@ -15,7 +15,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         log: true,
         waitConfirmations: network.config.blockConfirmations || 1
     })
-    log(`Auction deployed at ${auction.address}`)
+    console.log(`Auction deployed at ${auction.address}`)
 }
 
 module.exports.tags = ["all", "auction"]

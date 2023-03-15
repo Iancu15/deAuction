@@ -1,7 +1,7 @@
 import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
-import { Button, Modal, Input } from "web3uikit"
+import { Button, Input } from "web3uikit"
 const contractAddress = require("../constants/contractAddress.json")
 const abi = require("../constants/abi.json")
 
@@ -9,42 +9,29 @@ export default function Auction() {
     const { Moralis, isWeb3Enabled } = useMoralis()
 
     /**
-     * useWeb3Contract returns
+     * calling payable functions
      */
 
-    let enterAuction, enterAuctionIsLoading, enterAuctionIsFetching
-    let increaseBid, increaseBidIsLoading, increaseBidIsFetching
+    async function callEnterAuction(bid) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        const contract = new ethers.Contract(contractAddress, abi, provider)
 
-    /**
-     * customizable useWeb3Contract function calls
-     */
-
-    function callEnterAuction(bid) {
-        ({
-            runContractFunction: enterAuction,
-            isLoading: enterAuctionIsLoading,
-            isFetching: enterAuctionIsFetching
-        } = useWeb3Contract({
-            abi: abi,
-            contractAddress: contractAddress,
-            functionName: "enterAuction",
-            msgValue: bid,
-            params: {},
-        }))
+        try {
+            const tx = await contract.connect(connectedUser).enterAuction({
+                value: ethers.utils.parseEther(bid)
+            })
+            await handleSuccess(tx)
+        } catch (error) {
+            console.log(error)
+        }
     }
 
     function callIncreaseBid(bidAddition) {
-        ({
-            runContractFunction: increaseBid,
-            isLoading: increaseBidIsLoading,
-            isFetching: increaseBidIsFetching
-        } = useWeb3Contract({
-            abi: abi,
-            contractAddress: contractAddress,
-            functionName: "increaseBid",
-            msgValue: bidAddition,
-            params: {},
-        }))
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        const contract = new ethers.Contract(contractAddress, abi, provider)
+        contract.connect(connectedUser).increaseBid({
+            value: ethers.utils.parseEther(bidAddition)
+        })
     }
 
     /**
@@ -101,35 +88,35 @@ export default function Auction() {
 
     const { runContractFunction: getMaximumNumberOfBidders } = useWeb3Contract({
         abi: abi,
-        contractAddress: contractAddress, // specify the networkId
+        contractAddress: contractAddress,
         functionName: "getMaximumNumberOfBidders",
         params: {},
     })
 
     const { runContractFunction: getMinimumBid } = useWeb3Contract({
         abi: abi,
-        contractAddress: contractAddress, // specify the networkId
+        contractAddress: contractAddress,
         functionName: "getMinimumBid",
         params: {},
     })
 
     const { runContractFunction: getSellerAddress } = useWeb3Contract({
         abi: abi,
-        contractAddress: contractAddress, // specify the networkId
+        contractAddress: contractAddress,
         functionName: "getSellerAddress",
         params: {},
     })
 
     const { runContractFunction: getAuctioneerCollateralAmount } = useWeb3Contract({
         abi: abi,
-        contractAddress: contractAddress, // specify the networkId
+        contractAddress: contractAddress,
         functionName: "getAuctioneerCollateralAmount",
         params: {},
     })
 
     const { runContractFunction: getSellerCollateralAmount } = useWeb3Contract({
         abi: abi,
-        contractAddress: contractAddress, // specify the networkId
+        contractAddress: contractAddress,
         functionName: "getSellerCollateralAmount",
         params: {},
     })
@@ -139,10 +126,11 @@ export default function Auction() {
      */
 
     const [maximumNumberOfBidders, setMaximumNumberOfBidders] = useState(0)
-    const [minimumBid, setMinimumBid] = useState(BigInt(0))
-    const [sellerAddress, setSellerAddress] = useState(0)
-    const [auctioneerCollateralAmount, setAuctioneerCollateralAmount] = useState(BigInt(0))
-    const [sellerCollateralAmount, setSellerCollateralAmount] = useState(BigInt(0))
+    const [minimumBid, setMinimumBid] = useState("0")
+    const [sellerAddress, setSellerAddress] = useState("0")
+    const [auctioneerCollateralAmount, setAuctioneerCollateralAmount] = useState("0")
+    const [sellerCollateralAmount, setSellerCollateralAmount] = useState("0")
+    const [minimumBidPlusCollateral, setMinimumBidPlusCollateral] = useState("0")
     let fetchedConstants = false
 
     /**
@@ -203,21 +191,40 @@ export default function Auction() {
      */
 
     const [auctionWinner, setAuctionWinner] = useState("0")
-    const [myCurrentBid, setMyCurrentBid] = useState(BigInt(0))
-    const [contractBalance, setContractBalance] = useState(BigInt(0))
-    const [currentHighestBid, setCurrentHighestBid] = useState(BigInt(0))
+    const [myCurrentBid, setMyCurrentBid] = useState("0")
+    const [contractBalance, setContractBalance] = useState("0")
+    const [currentHighestBid, setCurrentHighestBid] = useState("0")
     const [doIHaveTheHighestBid, setDoIHaveTheHighestBid] = useState(false)
     const [isOpen, setIsOpen] = useState(true)
     const [numberOfBidders, setNumberOfBidders] = useState(0)
 
     async function fetchConstants() {
+        const auctioneerCollateralAmountValue = await getAuctioneerCollateralAmount()
+        const minimumBidValue = await getMinimumBid()
+        console.log(minimumBidValue)
+        const minimumBidPlusCollateralValue = minimumBidValue.add(auctioneerCollateralAmountValue)
         setMaximumNumberOfBidders(await getMaximumNumberOfBidders())
-        setMinimumBid(await getMinimumBid())
+        setMinimumBid(minimumBidValue.toString())
         setSellerAddress(await getSellerAddress())
-        setAuctioneerCollateralAmount(await getAuctioneerCollateralAmount())
+        setAuctioneerCollateralAmount(auctioneerCollateralAmountValue.toString())
         setSellerCollateralAmount(await getSellerCollateralAmount())
+        setMinimumBidPlusCollateral(minimumBidPlusCollateralValue.toString())
         fetchedConstants = true
     }
+
+    /**
+     * useEffect callable functions
+     */
+    async function updateConnectedUser() {
+        const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        setconnectedUser(signer)
+    }
+
+    window.ethereum.on('accountsChanged', function (accounts) {
+        updateConnectedUser()
+    })
 
     useEffect(() => {
         if (isWeb3Enabled) {
@@ -230,6 +237,8 @@ export default function Auction() {
             if (!fetchedConstants) {
                 fetchConstants()
             }
+
+            updateConnectedUser()
         }
     }, [isWeb3Enabled])
 
@@ -246,7 +255,6 @@ export default function Auction() {
     const handleSuccess = async (tx) => {
         try {
             await tx.wait(1)
-            updateUIValues()
             handleNewNotification(tx)
         } catch (error) {
             console.log(error)
@@ -254,36 +262,30 @@ export default function Auction() {
     }
 
     /**
-     * Modal variables
+     * auxiliary state variables
      */
-
-    const [showEnterAuctionModal, setShowEnterAuctionModal] = useState(false)
+    const [input, setInput] = useState("0")
+    const [connectedUser, setconnectedUser] = useState("0")
 
     return (
         <div>
-            {showEnterAuctionModal ? <Modal
-                    cancelText="Cancel"
-                    id="enterAuctionModal"
-                    isVisible
-                    okText="Enter Auction"
-                    onCancel={() => setShowEnterAuctionModal(false)}
-                    onCloseButtonPressed={function noRefCheck(){}}
-                    onOk={() => setShowEnterAuctionModal(false)}
-                >
-                    <Input
-                        label="Score 1 - 10"
-                        placeholder="10 out of 10?"
-                        type="number"
-                    />
-                </Modal> : <></>
-            }
+            <Input
+                label="Starting bid"
+                placeholder={ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")}
+                type="number"
+                onChange={(event) => {
+                    setInput(event.target.value)
+                }}
+            />
             <Button
                 onClick={
-                    () => setShowEnterAuctionModal(true)
+                    async () => {
+                        await callEnterAuction(input)
+                    }
                 }
                 text="Enter Auction"
                 theme="primary"
-                disabled={enterAuctionIsLoading || enterAuctionIsFetching}
+                //disabled={enterAuctionIsLoading || enterAuctionIsFetching}
             />
         </div>
     )
