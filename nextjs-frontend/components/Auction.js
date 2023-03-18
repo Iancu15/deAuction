@@ -139,7 +139,7 @@ export default function Auction() {
     const [auctioneerCollateralAmount, setAuctioneerCollateralAmount] = useState("0")
     const [sellerCollateralAmount, setSellerCollateralAmount] = useState("0")
     const [minimumBidPlusCollateral, setMinimumBidPlusCollateral] = useState("0")
-    let fetchedConstants = false
+    const [fetchedConstants, setFetchedConstants] = useState(false)
 
     /**
      * variable view getters
@@ -216,58 +216,55 @@ export default function Auction() {
         setAuctioneerCollateralAmount(auctioneerCollateralAmountValue.toString())
         setSellerCollateralAmount(await getSellerCollateralAmount())
         setMinimumBidPlusCollateral(minimumBidPlusCollateralValue.toString())
-        fetchedConstants = true
+        setFetchedConstants(true)
     }
 
     /**
      * useEffect callable functions
      */
-    async function updateConnectedUser() {
+    async function updateUIVariables() {
         const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
-        setconnectedUser(signer)
-    }
-
-    async function updateUIVariables() {
-        setMyCurrentBid((await getMyCurrentBid()).toString())
+        setConnectedUser(signer)
+        const amISellerValue = (await signer.getAddress()) == (await getSellerAddress())
+        setAmISeller(amISellerValue)
         setContractBalance((await getContractBalance()).toString())
         setCurrentHighestBid((await getCurrentHighestBid()).toString())
-        setDoIHaveTheHighestBid(await getDoIHaveTheHighestBid())
         setIsOpen(await getIsOpen())
         setNumberOfBidders((await getNumberOfBidders()).toString())
-        if (myCurrentBid != 0) {
-            console.log('ceva')
-            setEnteredAuction(true)
-        } else {
-            console.log('altceva')
-            setEnteredAuction(false)
+        if (!amISellerValue) {
+            setMyCurrentBid((await getMyCurrentBid()).toString())
+            setDoIHaveTheHighestBid(await getDoIHaveTheHighestBid())
+            if (myCurrentBid != 0) {
+                setEnteredAuction(true)
+            } else {
+                setEnteredAuction(false)
+            }
         }
+
+        setStatesAreLoading(false)
+    }
+
+    async function updateUI() {
+        if (!fetchedConstants) {
+            await fetchConstants()
+            console.log('fetched constants')
+        }
+
+        await updateUIVariables()
+        console.log('updated UI')
     }
 
     if (typeof window !== "undefined") {
         window.ethereum.on('accountsChanged', function (accounts) {
-            updateConnectedUser()
-            updateUIVariables()
+            updateUI()
         })
     }
-    
-    useEffect(() => {
-        if (isWeb3Enabled) {
-            fetchConstants()
-            updateConnectedUser()
-            updateUIVariables()
-        }
-    }, [])
 
     useEffect(() => {
         if (isWeb3Enabled) {
-            if (!fetchedConstants) {
-                fetchConstants()
-            }
-
-            updateConnectedUser()
-            updateUIVariables()
+            updateUI()
         }
     }, [isWeb3Enabled])
 
@@ -304,8 +301,10 @@ export default function Auction() {
      * auxiliary state variables
      */
     const [input, setInput] = useState("0")
-    const [connectedUser, setconnectedUser] = useState("0")
+    const [connectedUser, setConnectedUser] = useState({})
     const [enteredAuction, setEnteredAuction] = useState(false)
+    const [amISeller, setAmISeller] = useState(false)
+    const [statesAreLoading, setStatesAreLoading] = useState(true)
 
     /**
      * helper functions
@@ -315,7 +314,9 @@ export default function Auction() {
     }
 
     return (
-        <div>   
+        <div>
+            {statesAreLoading ? (<div></div>)
+            : (<div>
             <Information
                 information={getEtherOutput(minimumBid)}
                 topic="Minimum bid"
@@ -348,7 +349,9 @@ export default function Auction() {
                 information={isOpen ? "Open" : "Closed"}
                 topic="Auction status"
             />
-            {enteredAuction 
+            {amISeller
+                ? (<div></div>)
+            : (<div>{enteredAuction 
                 ? (<div>
                     <Information
                         information={getEtherOutput(myCurrentBid)}
@@ -411,8 +414,9 @@ export default function Auction() {
                         theme="primary"
                         //disabled={enterAuctionIsLoading || enterAuctionIsFetching}
                     />
-                </div>)
-            }
+                </div>)}
+            </div>)}
+            </div>)}
         </div>
     )
 }
