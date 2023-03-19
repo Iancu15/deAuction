@@ -9,13 +9,17 @@ export default function Auction() {
     const { Moralis, isWeb3Enabled } = useMoralis()
     const dispatch = useNotification()
 
+    async function getContract() {
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        return new ethers.Contract(contractAddress, abi, provider)
+    }
+
     /**
      * calling payable functions
      */
 
     async function enterAuction(bid) {
-        const provider = new ethers.providers.Web3Provider(window.ethereum)
-        const contract = new ethers.Contract(contractAddress, abi, provider)
+        const contract = await getContract()
 
         try {
             const tx = await contract.connect(connectedUser).enterAuction({
@@ -29,8 +33,7 @@ export default function Auction() {
     }
 
     async function increaseBid(bidAddition) {
-        const provider = new ethers.providers.Web3Provider(window.ethereum)
-        const contract = new ethers.Contract(contractAddress, abi, provider)
+        const contract = await getContract()
 
         try {
             const tx = await contract.connect(connectedUser).increaseBid({
@@ -209,51 +212,65 @@ export default function Auction() {
     async function fetchConstants() {
         const auctioneerCollateralAmountValue = await getAuctioneerCollateralAmount()
         const minimumBidValue = await getMinimumBid()
-        const minimumBidPlusCollateralValue = minimumBidValue.add(auctioneerCollateralAmountValue)
+        if (minimumBidValue !== undefined) {
+            const minimumBidPlusCollateralValue = minimumBidValue.add(auctioneerCollateralAmountValue)
+            setMinimumBidPlusCollateral(minimumBidPlusCollateralValue.toString())
+        }
+
         setMaximumNumberOfBidders((await getMaximumNumberOfBidders()).toString())
         setMinimumBid(minimumBidValue.toString())
         setSellerAddress(await getSellerAddress())
         setAuctioneerCollateralAmount(auctioneerCollateralAmountValue.toString())
         setSellerCollateralAmount(await getSellerCollateralAmount())
-        setMinimumBidPlusCollateral(minimumBidPlusCollateralValue.toString())
         setFetchedConstants(true)
     }
 
-    /**
-     * useEffect callable functions
-     */
     async function updateUIVariables() {
         const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
         setConnectedUser(signer)
-        const amISellerValue = (await signer.getAddress()) == (await getSellerAddress())
+        const myAddress = await signer.getAddress()
+        const amISellerValue = myAddress === (await getSellerAddress())
         setAmISeller(amISellerValue)
         setContractBalance((await getContractBalance()).toString())
         setCurrentHighestBid((await getCurrentHighestBid()).toString())
-        setIsOpen(await getIsOpen())
+        const isOpenValue = await getIsOpen()
+        setIsOpen(isOpenValue)
         setNumberOfBidders((await getNumberOfBidders()).toString())
         if (!amISellerValue) {
             setMyCurrentBid((await getMyCurrentBid()).toString())
             setDoIHaveTheHighestBid(await getDoIHaveTheHighestBid())
-            if (myCurrentBid != 0) {
+            if (myCurrentBid !== 0) {
                 setEnteredAuction(true)
             } else {
                 setEnteredAuction(false)
             }
+        } else {
+            const auctionWinnerValue = await getAuctionWinner()
+            setAuctionWinner(auctionWinnerValue)
         }
+    }
 
-        setStatesAreLoading(false)
+    async function wasContractDestroyed() {
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        return (await provider.getCode(contractAddress)).toString() == "0x"
     }
 
     async function updateUI() {
-        if (!fetchedConstants) {
-            await fetchConstants()
-            console.log('fetched constants')
+        const isContractDestroyedValue = await wasContractDestroyed()
+        setIsContractDestroyed(isContractDestroyedValue)
+        if (!isContractDestroyedValue) {
+            if (!fetchedConstants) {
+                await fetchConstants()
+                console.log('fetched constants')
+            }
+
+            await updateUIVariables()
+            console.log('updated UI')
         }
 
-        await updateUIVariables()
-        console.log('updated UI')
+        setStatesAreLoading(false)
     }
 
     if (typeof window !== "undefined") {
@@ -268,7 +285,7 @@ export default function Auction() {
         }
     }, [isWeb3Enabled])
 
-    const handleNewNotification = () => {
+    const handleNotification = () => {
         dispatch({
             type: "info",
             message: "Transaction Complete!",
@@ -278,20 +295,21 @@ export default function Auction() {
         })
     }
 
+    const handleError = (error) => {
+        dispatch({
+            type: "error",
+            message: error,
+            title: "Transaction Error",
+            position: "topR",
+            icon: "bell",
+        })
+    }
+
     const handleSuccess = async (tx) => {
         try {
             await tx.wait(1)
-            handleNewNotification(tx)
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    const handleSuccessLeaveAuction = async (tx) => {
-        try {
-            await tx.wait(1)
-            handleNewNotification(tx)
-            setEnteredAuction(false)
+            handleNotification(tx)
+            await updateUI()
         } catch (error) {
             console.log(error)
         }
@@ -305,17 +323,23 @@ export default function Auction() {
     const [enteredAuction, setEnteredAuction] = useState(false)
     const [amISeller, setAmISeller] = useState(false)
     const [statesAreLoading, setStatesAreLoading] = useState(true)
+    const [isContractDestroyed, setIsContractDestroyed] = useState(false)
 
     /**
      * helper functions
      */
     function getEtherOutput(amount) {
-        return ethers.utils.formatUnits(sellerCollateralAmount, "ether") + " ETH"
+        return ethers.utils.formatUnits(amount, "ether") + " ETH"
     }
 
     return (
         <div>
             {statesAreLoading ? (<div></div>)
+            : (<div>
+            {isContractDestroyed ?
+            (<div>
+                <h1>Auction ended!</h1>
+            </div>)
             : (<div>
             <Information
                 information={getEtherOutput(minimumBid)}
@@ -350,9 +374,47 @@ export default function Auction() {
                 topic="Auction status"
             />
             {amISeller
-                ? (<div></div>)
-            : (<div>{enteredAuction 
                 ? (<div>
+                    {isOpen ?
+                    (<Button
+                        onClick={
+                            async () => {
+                                await closeAuction({
+                                    onSuccess: handleSuccess,
+                                    onError: (error) => handleError(error.message)
+                                })
+                            }
+                        }
+
+                        text="Close auction"
+                        theme="primary"
+                        disabled={closeAuctionIsLoading || closeAuctionIsFetching}
+                    />)
+                    : (<div>
+                    <Information
+                        information={auctionWinner}
+                        topic="Auction winner"
+                    />
+                    <Button
+                        onClick={
+                            async () => {
+                                await burnAllStoredValue({
+                                    onSuccess: handleSuccess,
+                                    onError: (error) => handleError(error.message)
+                                })
+                            }
+                        }
+
+                        text="Burn all stored value"
+                        theme="primary"
+                        disabled={burnAllStoredValueBidIsLoading || burnAllStoredValueBidIsFetching}
+                    />
+                    </div>)
+                }
+                </div>)
+            : (<div>{enteredAuction
+                ? (<div>
+                    
                     <Information
                         information={getEtherOutput(myCurrentBid)}
                         topic="Your current bid"
@@ -360,39 +422,61 @@ export default function Auction() {
                     <Information
                         information={doIHaveTheHighestBid ? "You're in the lead!" : "You're behind!"}
                     />
-                    <Input
-                        label="Addition bid"
-                        placeholder="0"
-                        type="number"
-                        onChange={(event) => {
-                            setInput(event.target.value)
-                        }}
-                    />
-                    <Button
-                        onClick={
-                            async () => {
-                                await increaseBid(input)
+                    <div> {isOpen ? (<div>
+                        <Input
+                            label="Addition bid"
+                            placeholder="0"
+                            type="number"
+                            onChange={(event) => {
+                                setInput(event.target.value)
+                            }}
+                        />
+                        <Button
+                            onClick={
+                                async () => {
+                                    await increaseBid(input)
+                                }
                             }
-                        }
 
-                        text="Increase bid"
-                        theme="primary"
-                        //disabled={enterAuctionIsLoading || enterAuctionIsFetching}
-                    />
-                    <Button
-                        onClick={
-                            async () => {
-                                await leaveAuction({
-                                    onSuccess: handleSuccessLeaveAuction,
-                                    onError: (error) => console.log(error)
-                                })
+                            text="Increase bid"
+                            theme="primary"
+                            //disabled={enterAuctionIsLoading || enterAuctionIsFetching}
+                        />
+                        <Button
+                            onClick={
+                                async () => {
+                                    await leaveAuction({
+                                        onSuccess: handleSuccess,
+                                        onError: (error) => handleError(error.message)
+                                    })
+                                }
                             }
-                        }
 
-                        text="Leave auction"
-                        theme="primary"
-                        disabled={leaveAuctionIsLoading || leaveAuctionIsFetching}
-                    />
+                            text="Leave auction"
+                            theme="primary"
+                            disabled={leaveAuctionIsLoading || leaveAuctionIsFetching}
+                        />
+                        </div>)
+                        : (<div>
+                            {doIHaveTheHighestBid ? (<div>
+                            <Button
+                                onClick={
+                                    async () => {
+                                        await routeHighestBid({
+                                            onSuccess: handleSuccess,
+                                            onError: (error) => handleError(error.message)
+                                        })
+                                    }
+                                }
+
+                                text="Route bid"
+                                theme="primary"
+                                disabled={leaveAuctionIsLoading || leaveAuctionIsFetching}
+                            />
+                            </div>)
+                            : (<div></div>)}
+                        </div>)}
+                    </div>
                 </div>)
                 : (<div>
                     <Input
@@ -415,6 +499,7 @@ export default function Auction() {
                         //disabled={enterAuctionIsLoading || enterAuctionIsFetching}
                     />
                 </div>)}
+            </div>)}
             </div>)}
             </div>)}
         </div>

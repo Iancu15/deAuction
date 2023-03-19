@@ -39,3 +39,7 @@ yarn-error.log*
 
 # next.js
 /.next
+
+# generated files
+abi.json
+contractAddress.json

@@ -316,7 +316,7 @@ describe("Auction", function () {
         })
 
         it("sends money back to auctioneer", async () => {
-            balanceAuctioneer2 = await getBalance(2)
+            const balanceAuctioneer2 = await getBalance(2)
             await auctioneer1EnterAuction()
             let transactionResponse = await auction.connect(accounts[2]).enterAuction({
                 value: ethers.utils.parseEther("0.15")
@@ -344,9 +344,12 @@ describe("Auction", function () {
             )
         })
 
-        it("destroys the contract if there are no bids", async () => {
-            await closeAuction()
+        it("destroys the contract if there are no bids and sends back collateral", async () => {
+            const initialSellerBalance = await getBalance(0)
+            const transactionResponse = await closeAuction()
             await equal(isContractDestroyed(), true)
+            const gasCost = await getGasCost(transactionResponse)
+            await checkBalance(0, initialSellerBalance.add(ethers.utils.parseEther("0.1")), gasCost)
         })
 
         it("closes the auction", async () => {
@@ -393,7 +396,7 @@ describe("Auction", function () {
 
         it("fails when caller isn't the highest bidder", async () => {
             await auctioneer1EnterAuction()
-            transactionResponse = await auction.connect(accounts[2]).enterAuction({
+            const transactionResponse = await auction.connect(accounts[2]).enterAuction({
                 value: ethers.utils.parseEther("0.15")
             })
 

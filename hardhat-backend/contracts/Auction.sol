@@ -38,7 +38,8 @@ contract Auction is AutomationCompatibleInterface {
     uint256 private immutable i_sellerCollateralAmount;
     uint256 private immutable i_interval;
     uint256 private immutable i_startTimestamp;
-    uint256 private constant OPEN_INTERVAL_THRESHOLD = 24 * 3600;
+    //uint256 private constant OPEN_INTERVAL_THRESHOLD = 24 * 3600;
+    uint256 private constant OPEN_INTERVAL_THRESHOLD = 0;
     uint256 private constant CLOSED_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_INTERVAL = 7 * 24 * 3600;
 
@@ -139,7 +140,7 @@ contract Auction is AutomationCompatibleInterface {
         s_auctioneers.push(msg.sender);
     }
 
-    function increaseBid() public payable {
+    function increaseBid() public payable auctionOpen {
         uint256 currentBid = s_auctioneerToCurrentBid[msg.sender];
         if (currentBid == 0) {
             revert Auction__DidntEnterAuction();
@@ -157,7 +158,7 @@ contract Auction is AutomationCompatibleInterface {
         }
     }
 
-    function leaveAuction() public {
+    function leaveAuction() public auctionOpen {
         if (msg.sender == s_currentHighestBidder) {
             revert Auction__HighestBidderCantWithdraw();
         }
@@ -178,12 +179,20 @@ contract Auction is AutomationCompatibleInterface {
         }
     }
 
-    function closeAuction() public onlySeller {
+    function closeAuction() public onlySeller auctionOpen {
         if (!canICloseAuction()) {
             revert Auction__ThresholdNotReached(getTimeUntilThreshold());
         }
 
         if (s_currentHighestBid == 0) {
+            (bool success, ) = payable(i_seller).call{
+                value: i_sellerCollateralAmount
+            }("");
+
+            if (!success) {
+                revert Auction__TransactionFailed();
+            }
+
             destroyContract();
         }
 
