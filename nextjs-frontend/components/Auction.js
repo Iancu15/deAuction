@@ -1,7 +1,7 @@
 import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
-import { Button, Input, Information, useNotification, BannerStrip } from "web3uikit"
+import { Button, Input, Information, useNotification } from "web3uikit"
 const contractAddress = require("../constants/contractAddress.json")
 const abi = require("../constants/abi.json")
 
@@ -242,14 +242,20 @@ export default function Auction() {
         setFetchedConstants(true)
     }
 
-    async function updateUIVariables() {
-        const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-        await provider.send("eth_requestAccounts", []);
-        const signer = provider.getSigner();
-        setConnectedUser(signer)
-        const myAddress = await signer.getAddress()
-        const amISellerValue = myAddress === (await getSellerAddress())
-        setAmISeller(amISellerValue)
+    async function updateUIVariables(minimalUpdate = false) {
+        let amISellerValue
+        if (!minimalUpdate) {
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            setConnectedUser(signer)
+            const myAddress = await signer.getAddress()
+            amISellerValue = myAddress === (await getSellerAddress())
+            setAmISeller(amISellerValue)
+        } else {
+            amISellerValue = amISeller
+        }
+
         setContractBalance((await getContractBalance()).toString())
         setCurrentHighestBid((await getCurrentHighestBid()).toString())
         const isOpenValue = await getIsOpen()
@@ -275,7 +281,7 @@ export default function Auction() {
         return (await provider.getCode(contractAddress)).toString() == "0x"
     }
 
-    async function updateUI() {
+    async function updateUI(minimalUpdate = false) {
         console.log('updating UI...')
         setStatesAreLoading(true)
         const isContractDestroyedValue = await wasContractDestroyed()
@@ -286,7 +292,7 @@ export default function Auction() {
                 console.log('fetched constants')
             }
 
-            await updateUIVariables()
+            await updateUIVariables(minimalUpdate)
             console.log('updated UI')
         }
 
@@ -329,7 +335,7 @@ export default function Auction() {
         try {
             await tx.wait(1)
             handleNotification(tx)
-            await updateUI()
+            await updateUI(true)
         } catch (error) {
             console.log(error)
         }

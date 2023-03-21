@@ -38,8 +38,11 @@ yarn-error.log*
 .vercel
 
 # next.js
+nextjs-frontend/.next
+.next
 /.next
 
 # generated files
 abi.json
 contractAddress.json
+deployments
