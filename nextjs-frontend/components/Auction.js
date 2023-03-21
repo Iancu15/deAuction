@@ -9,9 +9,18 @@ export default function Auction() {
     const { Moralis, isWeb3Enabled } = useMoralis()
     const dispatch = useNotification()
 
+    /**
+     * ethers helper functions
+     */
+
     async function getContract() {
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         return new ethers.Contract(contractAddress, abi, provider)
+    }
+
+    async function wasContractDestroyed() {
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        return (await provider.getCode(contractAddress)).toString() == "0x"
     }
 
     /**
@@ -24,13 +33,13 @@ export default function Auction() {
         const collateralFloat = parseFloat(ethers.utils.formatUnits(auctioneerCollateralAmount, "ether"))
         const bidFloat = parseFloat(input)
         if (maximumNumberOfBidders === numberOfBidders) {
-            handleError('Maximum number of participants reached!')
+            handleErrorNotification('Maximum number of participants reached!')
         } else if (!input) {
-            handleError('Invalid input! Bid has to be numerical.')
+            handleErrorNotification('Invalid input! Bid has to be numerical.')
         } else if (bidFloat < minimumBidPlusCollateralFloat) {
-            handleError('Bid has to be higher or equal to ' + ethers.utils.formatUnits(minimumBidPlusCollateral, "ether") + ' ETH! You tried to bid ' + input + ' ETH.')
+            handleErrorNotification('Bid has to be higher or equal to ' + ethers.utils.formatUnits(minimumBidPlusCollateral, "ether") + ' ETH! You tried to bid ' + input + ' ETH.')
         } else if (bidFloat === collateralFloat) {
-            handleError("The bid only covers the collateral! The actual bid is 0.")
+            handleErrorNotification("The bid only covers the collateral! The actual bid is 0.")
         } else {
             try {
                 const tx = await contract.connect(connectedUser).enterAuction({
@@ -38,7 +47,7 @@ export default function Auction() {
                 })
                 await handleSuccess(tx)
             } catch (error) {
-                handleError(error.message)
+                handleErrorNotification(error.message)
             }
         }
     }
@@ -47,9 +56,9 @@ export default function Auction() {
         const contract = await getContract()
 
         if (!input) {
-            handleError('Invalid input! Addition bid has to be numerical.')
+            handleErrorNotification('Invalid input! Addition bid has to be numerical.')
         } else if (input === '0') {
-            handleError('Addition bid has to be higher than 0 ETH. You tried to bid ' + input + ' ETH.')
+            handleErrorNotification('Addition bid has to be higher than 0 ETH. You tried to bid ' + input + ' ETH.')
         } else {
             try {
                 const tx = await contract.connect(connectedUser).increaseBid({
@@ -57,7 +66,7 @@ export default function Auction() {
                 })
                 await handleSuccess(tx)
             } catch (error) {
-                handleError(error.message)
+                handleErrorNotification(error.message)
             }
         }
     }
@@ -276,11 +285,6 @@ export default function Auction() {
         }
     }
 
-    async function wasContractDestroyed() {
-        const provider = new ethers.providers.Web3Provider(window.ethereum)
-        return (await provider.getCode(contractAddress)).toString() == "0x"
-    }
-
     async function updateUI(minimalUpdate = false) {
         console.log('updating UI...')
         setStatesAreLoading(true)
@@ -311,30 +315,52 @@ export default function Auction() {
         }
     }, [isWeb3Enabled])
 
-    const handleNotification = () => {
+    const handleSuccessNotification = () => {
         dispatch({
-            type: "success",
-            message: "Transaction Complete!",
-            title: "Transaction Notification",
+            type: 'success',
+            message: 'Transaction Complete!',
+            title: 'Transaction Notification',
             position: "topR",
-            icon: "checkmark",
+            icon: 'checkmark',
         })
     }
 
-    const handleError = (error) => {
+    const handleBellNotification = (type, message, title) => {
         dispatch({
-            type: "error",
-            message: error,
-            title: "Transaction Error",
+            type: type,
+            message: message,
+            title: title,
             position: "topR",
-            icon: "bell",
+            icon: 'bell',
         })
+    }
+
+    const handleErrorNotification = (errorMessage) => {
+        handleBellNotification('error', errorMessage, 'Transaction Error')
+    }
+
+    const handleInfoNotification = (message) => {
+        handleBellNotification('info', message, 'Transaction Information')
+    }
+
+    const handleWarningNotification = (message) => {
+        handleBellNotification('warning', message, 'Transaction Warning')
+    }
+
+    const handleError = async (errorMessage) => {
+        if (errorMessage.includes('web3')) {
+            handleWarningNotification("You aren't connected to your wallet! Please connect.")
+        } else if (errorMessage.includes('denied')) {
+            handleInfoNotification("Transaction wasn't send.")
+        } else {
+            handleErrorNotification(errorMessage)
+        }
     }
 
     const handleSuccess = async (tx) => {
         try {
             await tx.wait(1)
-            handleNotification(tx)
+            handleSuccessNotification(tx)
             await updateUI(true)
         } catch (error) {
             console.log(error)
@@ -472,7 +498,7 @@ export default function Auction() {
                             onClick={
                                 async () => {
                                     if (doIHaveTheHighestBid) {
-                                        handleError("You're the highest bidder therefore you can't withdraw!")
+                                        handleErrorNotification("You're the highest bidder therefore you can't withdraw!")
                                     } else {
                                         await leaveAuction({
                                             onSuccess: handleSuccess,
