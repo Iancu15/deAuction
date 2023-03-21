@@ -1,7 +1,7 @@
 import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
-import { Button, Input, Information, useNotification } from "web3uikit"
+import { Button, Input, Information, useNotification, BannerStrip } from "web3uikit"
 const contractAddress = require("../constants/contractAddress.json")
 const abi = require("../constants/abi.json")
 
@@ -18,30 +18,47 @@ export default function Auction() {
      * calling payable functions
      */
 
-    async function enterAuction(bid) {
+    async function enterAuction() {
         const contract = await getContract()
-
-        try {
-            const tx = await contract.connect(connectedUser).enterAuction({
-                value: ethers.utils.parseEther(bid)
-            })
-            await handleSuccess(tx)
-            setEnteredAuction(true)
-        } catch (error) {
-            console.log(error)
+        const minimumBidPlusCollateralFloat = parseFloat(ethers.utils.formatUnits(minimumBidPlusCollateral, "ether"))
+        const collateralFloat = parseFloat(ethers.utils.formatUnits(auctioneerCollateralAmount, "ether"))
+        const bidFloat = parseFloat(input)
+        if (maximumNumberOfBidders === numberOfBidders) {
+            handleError('Maximum number of participants reached!')
+        } else if (!input) {
+            handleError('Invalid input! Bid has to be numerical.')
+        } else if (bidFloat < minimumBidPlusCollateralFloat) {
+            handleError('Bid has to be higher or equal to ' + ethers.utils.formatUnits(minimumBidPlusCollateral, "ether") + ' ETH! You tried to bid ' + input + ' ETH.')
+        } else if (bidFloat === collateralFloat) {
+            handleError("The bid only covers the collateral! The actual bid is 0.")
+        } else {
+            try {
+                const tx = await contract.connect(connectedUser).enterAuction({
+                    value: ethers.utils.parseEther(input)
+                })
+                await handleSuccess(tx)
+            } catch (error) {
+                handleError(error.message)
+            }
         }
     }
 
-    async function increaseBid(bidAddition) {
+    async function increaseBid() {
         const contract = await getContract()
 
-        try {
-            const tx = await contract.connect(connectedUser).increaseBid({
-                value: ethers.utils.parseEther(bidAddition)
-            })
-            await handleSuccess(tx)
-        } catch (error) {
-            console.log(error)
+        if (!input) {
+            handleError('Invalid input! Addition bid has to be numerical.')
+        } else if (input === '0') {
+            handleError('Addition bid has to be higher than 0 ETH. You tried to bid ' + input + ' ETH.')
+        } else {
+            try {
+                const tx = await contract.connect(connectedUser).increaseBid({
+                    value: ethers.utils.parseEther(input)
+                })
+                await handleSuccess(tx)
+            } catch (error) {
+                handleError(error.message)
+            }
         }
     }
 
@@ -239,14 +256,15 @@ export default function Auction() {
         setIsOpen(isOpenValue)
         setNumberOfBidders((await getNumberOfBidders()).toString())
         if (!amISellerValue) {
-            setMyCurrentBid((await getMyCurrentBid()).toString())
+            const myCurrentBidValue = (await getMyCurrentBid()).toString()
+            setMyCurrentBid(myCurrentBidValue)
             setDoIHaveTheHighestBid(await getDoIHaveTheHighestBid())
-            if (myCurrentBid !== 0) {
+            if (myCurrentBidValue.toString() !== '0') {
                 setEnteredAuction(true)
             } else {
                 setEnteredAuction(false)
             }
-        } else {
+        } else if (!isOpenValue) {
             const auctionWinnerValue = await getAuctionWinner()
             setAuctionWinner(auctionWinnerValue)
         }
@@ -258,6 +276,8 @@ export default function Auction() {
     }
 
     async function updateUI() {
+        console.log('updating UI...')
+        setStatesAreLoading(true)
         const isContractDestroyedValue = await wasContractDestroyed()
         setIsContractDestroyed(isContractDestroyedValue)
         if (!isContractDestroyedValue) {
@@ -287,11 +307,11 @@ export default function Auction() {
 
     const handleNotification = () => {
         dispatch({
-            type: "info",
+            type: "success",
             message: "Transaction Complete!",
             title: "Transaction Notification",
             position: "topR",
-            icon: "bell",
+            icon: "checkmark",
         })
     }
 
@@ -434,7 +454,7 @@ export default function Auction() {
                         <Button
                             onClick={
                                 async () => {
-                                    await increaseBid(input)
+                                    await increaseBid()
                                 }
                             }
 
@@ -445,10 +465,14 @@ export default function Auction() {
                         <Button
                             onClick={
                                 async () => {
-                                    await leaveAuction({
-                                        onSuccess: handleSuccess,
-                                        onError: (error) => handleError(error.message)
-                                    })
+                                    if (doIHaveTheHighestBid) {
+                                        handleError("You're the highest bidder therefore you can't withdraw!")
+                                    } else {
+                                        await leaveAuction({
+                                            onSuccess: handleSuccess,
+                                            onError: (error) => handleError(error.message)
+                                        })
+                                    }
                                 }
                             }
 
@@ -479,25 +503,32 @@ export default function Auction() {
                     </div>
                 </div>)
                 : (<div>
-                    <Input
-                        label="Starting bid"
-                        placeholder={ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")}
-                        type="number"
-                        onChange={(event) => {
-                            setInput(event.target.value)
-                        }}
-                    />
-                    <Button
-                        onClick={
-                            async () => {
-                                await enterAuction(input)
+                    {isOpen ? (<div>
+                        <Input
+                            label="Starting bid"
+                            placeholder={ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")}
+                            type="number"
+                            onChange={(event) => {
+                                setInput(event.target.value)
+                            }}
+                            state={
+                                (parseFloat(input) >= parseFloat(ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")))
+                                ? "confirmed" : "error"
                             }
-                        }
+                        />
+                        <Button
+                            onClick={
+                                async () => {
+                                    await enterAuction()
+                                }
+                            }
 
-                        text="Enter Auction"
-                        theme="primary"
-                        //disabled={enterAuctionIsLoading || enterAuctionIsFetching}
-                    />
+                            text="Enter Auction"
+                            theme="primary"
+                            //disabled={enterAuctionIsLoading || enterAuctionIsFetching}
+                        />
+                        </div>)
+                        : (<div></div>)}
                 </div>)}
             </div>)}
             </div>)}
