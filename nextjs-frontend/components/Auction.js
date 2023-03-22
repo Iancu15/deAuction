@@ -23,6 +23,10 @@ export default function Auction() {
         return (await provider.getCode(contractAddress)).toString() == "0x"
     }
 
+    function getEtherOutput(amount) {
+        return ethers.utils.formatUnits(amount, "ether") + " ETH"
+    }
+
     /**
      * calling payable functions
      */
@@ -39,16 +43,19 @@ export default function Auction() {
         } else if (bidFloat < minimumBidPlusCollateralFloat) {
             handleErrorNotification('Bid has to be higher or equal to ' + ethers.utils.formatUnits(minimumBidPlusCollateral, "ether") + ' ETH! You tried to bid ' + input + ' ETH.')
         } else if (bidFloat === collateralFloat) {
-            handleErrorNotification("The bid only covers the collateral! The actual bid is 0.")
+            handleErrorNotification('The bid only covers the collateral! The actual bid is 0.')
         } else {
+            setIsLoading(true)
             try {
                 const tx = await contract.connect(connectedUser).enterAuction({
                     value: ethers.utils.parseEther(input)
                 })
                 await handleSuccess(tx)
             } catch (error) {
-                handleErrorNotification(error.message)
+                handleError(error.message)
             }
+
+            setIsLoading(false)
         }
     }
 
@@ -60,14 +67,17 @@ export default function Auction() {
         } else if (input === '0') {
             handleErrorNotification('Addition bid has to be higher than 0 ETH. You tried to bid ' + input + ' ETH.')
         } else {
+            setIsLoading(true)
             try {
                 const tx = await contract.connect(connectedUser).increaseBid({
                     value: ethers.utils.parseEther(input)
                 })
                 await handleSuccess(tx)
             } catch (error) {
-                handleErrorNotification(error.message)
+                handleError(error.message)
             }
+
+            setIsLoading(false)
         }
     }
 
@@ -235,6 +245,10 @@ export default function Auction() {
     const [isOpen, setIsOpen] = useState(true)
     const [numberOfBidders, setNumberOfBidders] = useState("0")
 
+    /**
+     * rerendering functions
+     */
+
     async function fetchConstants() {
         const auctioneerCollateralAmountValue = await getAuctioneerCollateralAmount()
         const minimumBidValue = await getMinimumBid()
@@ -315,6 +329,10 @@ export default function Auction() {
         }
     }, [isWeb3Enabled])
 
+    /**
+     * notification functions
+     */
+
     const handleSuccessNotification = () => {
         dispatch({
             type: 'success',
@@ -347,7 +365,7 @@ export default function Auction() {
         handleBellNotification('warning', message, 'Transaction Warning')
     }
 
-    const handleError = async (errorMessage) => {
+    const handleError = (errorMessage) => {
         if (errorMessage.includes('web3')) {
             handleWarningNotification("You aren't connected to your wallet! Please connect.")
         } else if (errorMessage.includes('denied')) {
@@ -376,13 +394,7 @@ export default function Auction() {
     const [amISeller, setAmISeller] = useState(false)
     const [statesAreLoading, setStatesAreLoading] = useState(true)
     const [isContractDestroyed, setIsContractDestroyed] = useState(false)
-
-    /**
-     * helper functions
-     */
-    function getEtherOutput(amount) {
-        return ethers.utils.formatUnits(amount, "ether") + " ETH"
-    }
+    const [isLoading, setIsLoading] = useState(false)
 
     return (
         <div>
@@ -476,6 +488,7 @@ export default function Auction() {
                     />
                     <div> {isOpen ? (<div>
                         <Input
+                            errorMessage={'Addition bid has to be numerical and higher than 0'}
                             label="Addition bid"
                             placeholder="0"
                             type="number"
@@ -483,17 +496,19 @@ export default function Auction() {
                                 setInput(event.target.value)
                             }}
                         />
-                        <Button
-                            onClick={
-                                async () => {
-                                    await increaseBid()
+                        <div className="pb-5 pt-3">
+                            <Button
+                                onClick={
+                                    async () => {
+                                        await increaseBid()
+                                    }
                                 }
-                            }
 
-                            text="Increase bid"
-                            theme="primary"
-                            //disabled={enterAuctionIsLoading || enterAuctionIsFetching}
-                        />
+                                text="Increase bid"
+                                theme="primary"
+                                disabled={isLoading}
+                            />
+                        </div>
                         <Button
                             onClick={
                                 async () => {
@@ -536,18 +551,21 @@ export default function Auction() {
                 </div>)
                 : (<div>
                     {isOpen ? (<div>
-                        <Input
-                            label="Starting bid"
-                            placeholder={ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")}
-                            type="number"
-                            onChange={(event) => {
-                                setInput(event.target.value)
-                            }}
-                            state={
-                                (parseFloat(input) >= parseFloat(ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")))
-                                ? "confirmed" : "error"
-                            }
-                        />
+                        <div className="pb-5 pt-3">
+                            <Input
+                                errorMessage={'Bid has to be numerical and higher than ' + ethers.utils.formatUnits(minimumBidPlusCollateral, "ether") + ' ETH'}
+                                label="Starting bid"
+                                placeholder={ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")}
+                                type="number"
+                                onChange={(event) => {
+                                    setInput(event.target.value)
+                                }}
+                                state={
+                                    (parseFloat(input) >= parseFloat(ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")))
+                                    ? "confirmed" : "error"
+                                }
+                            />
+                        </div>
                         <Button
                             onClick={
                                 async () => {
@@ -557,7 +575,7 @@ export default function Auction() {
 
                             text="Enter Auction"
                             theme="primary"
-                            //disabled={enterAuctionIsLoading || enterAuctionIsFetching}
+                            disabled={isLoading}
                         />
                         </div>)
                         : (<div></div>)}

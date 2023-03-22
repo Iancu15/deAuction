@@ -2,15 +2,11 @@ import { ConnectButton } from "web3uikit"
 
 export default function Header() {
     return (
-        <nav>
-            <ul>
-                <li><h1> Decentralized Auction</h1></li>
-                <li>
-                    <div>
-                        <ConnectButton moralisAuth={false}/>
-                    </div>
-                </li>
-            </ul>
+        <nav className="p-5 border-b-2 flex flex-row">
+            <h1 className="py-4 px-4 font-bold text-3xl">Decentralized Auction</h1>
+            <div className="ml-auto py-2 px-4">
+                <ConnectButton moralisAuth={false}/>
+            </div>
         </nav>
     )
 }
