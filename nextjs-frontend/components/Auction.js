@@ -1,12 +1,12 @@
 import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
-import { Button, Input, Information, useNotification } from "web3uikit"
+import { Button, Input, useNotification, Widget, Hero, Skeleton } from "web3uikit"
 const contractAddress = require("../constants/contractAddress.json")
 const abi = require("../constants/abi.json")
 
 export default function Auction() {
-    const { Moralis, isWeb3Enabled } = useMoralis()
+    const { isWeb3Enabled } = useMoralis()
     const dispatch = useNotification()
 
     /**
@@ -398,137 +398,166 @@ export default function Auction() {
 
     return (
         <div>
-            {statesAreLoading ? (<div></div>)
+            {statesAreLoading ? (
+            <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={<Skeleton theme="text" />} title="Seller address" />
+                    <Widget info={<Skeleton theme="text" />} title="Seller collateral amount" />
+                </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={<Skeleton theme="text" />} title="Minimum bid" />
+                    <Widget info={<Skeleton theme="text" />} title="Auctioneer collateral amount" />
+                    <Widget info={<Skeleton theme="text" />} title="Highest bid currently" />
+                </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={<Skeleton theme="text" />} title="Auction status" />
+                    <Widget info={<Skeleton theme="text" />} title="Contract balance" />
+                    {isOpen ? (<Widget info={<Skeleton theme="text" />} title="Number of participants" />)
+                        : (<Widget info={<Skeleton theme="text" />} title="Maximum number of participants" />)}
+                </section>
+            </div>)
             : (<div>
             {isContractDestroyed ?
             (<div>
-                <h1>Auction ended!</h1>
+                <Hero
+                    height="200px"
+                    title='Auction ended!'
+                />
             </div>)
             : (<div>
-            <Information
-                information={getEtherOutput(minimumBid)}
-                topic="Minimum bid"
-            />
-            <Information
-                information={sellerAddress}
-                topic="Seller address"
-            />
-            <Information
-                information={getEtherOutput(auctioneerCollateralAmount)}
-                topic="Auctioneer collateral amount"
-            />
-            <Information
-                information={getEtherOutput(sellerCollateralAmount)}
-                topic="Seller collateral amount"
-            />
-            <Information
-                information={numberOfBidders + "/" + maximumNumberOfBidders}
-                topic="Number of participants"
-            />
-            <Information
-                information={getEtherOutput(contractBalance)}
-                topic="Contract balance"
-            />
-            <Information
-                information={getEtherOutput(currentHighestBid)}
-                topic="Highest bid currently"
-            />
-            <Information
-                information={isOpen ? "Open" : "Closed"}
-                topic="Auction status"
-            />
+            {(!amISeller && enteredAuction) ?
+            (
+                <Hero
+                    height="125px"
+                    title={isOpen ? (doIHaveTheHighestBid ? "You're in the lead!" : "You're behind!") : (doIHaveTheHighestBid ? 'You won!' : '')}
+                    subTitle={"Your " + (isOpen ? 'current' : 'winning') + ' bid ' + (isOpen ? 'is ' : 'was ') + getEtherOutput(myCurrentBid)}
+                />
+            ) : (<div></div>)}
+            {(amISeller && !isOpen) ?
+            (
+                <Hero
+                    height="125px"
+                    title={auctionWinner}
+                    subTitle='The winner of the auction'
+                />
+            ) : (<div></div>)}
+            <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={sellerAddress} title="Seller address" />
+                    <Widget info={getEtherOutput(sellerCollateralAmount)} title="Seller collateral amount" />
+                </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={getEtherOutput(minimumBid)} title="Minimum bid" />
+                    <Widget info={getEtherOutput(auctioneerCollateralAmount)} title="Auctioneer collateral amount" />
+                    <Widget info={getEtherOutput(currentHighestBid)} title="Highest bid currently" />
+                </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={isOpen ? "Open" : "Closed"} title="Auction status" />
+                    <Widget info={getEtherOutput(contractBalance)} title="Contract balance" />
+                    {isOpen ? (<Widget info={numberOfBidders + "/" + maximumNumberOfBidders} title="Number of participants" />)
+                        : (<Widget info={maximumNumberOfBidders} title="Maximum number of participants" />)}
+                </section>
+            </div>
             {amISeller
                 ? (<div>
                     {isOpen ?
-                    (<Button
-                        onClick={
-                            async () => {
-                                await closeAuction({
-                                    onSuccess: handleSuccess,
-                                    onError: (error) => handleError(error.message)
-                                })
+                    (<div className="pl-44">
+                        <Button
+                            onClick={
+                                async () => {
+                                    await closeAuction({
+                                        onSuccess: handleSuccess,
+                                        onError: (error) => handleError(error.message)
+                                    })
+                                }
                             }
-                        }
 
-                        text="Close auction"
-                        theme="primary"
-                        disabled={closeAuctionIsLoading || closeAuctionIsFetching}
-                    />)
-                    : (<div>
-                    <Information
-                        information={auctionWinner}
-                        topic="Auction winner"
-                    />
-                    <Button
-                        onClick={
-                            async () => {
-                                await burnAllStoredValue({
-                                    onSuccess: handleSuccess,
-                                    onError: (error) => handleError(error.message)
-                                })
+                            text="Close auction"
+                            theme="colored"
+                            color="red"
+                            size="large"
+                            disabled={closeAuctionIsLoading || closeAuctionIsFetching}
+                        />
+                    </div>)
+                    : (<div className="pl-44">
+                        <Button
+                            onClick={
+                                async () => {
+                                    await burnAllStoredValue({
+                                        onSuccess: handleSuccess,
+                                        onError: (error) => handleError(error.message)
+                                    })
+                                }
                             }
-                        }
 
-                        text="Burn all stored value"
-                        theme="primary"
-                        disabled={burnAllStoredValueBidIsLoading || burnAllStoredValueBidIsFetching}
-                    />
+                            text="Burn all stored value"
+                            theme="colored"
+                            color="red"
+                            size="large"
+                            disabled={burnAllStoredValueBidIsLoading || burnAllStoredValueBidIsFetching}
+                        />
                     </div>)
                 }
                 </div>)
             : (<div>{enteredAuction
-                ? (<div>
-                    
-                    <Information
-                        information={getEtherOutput(myCurrentBid)}
-                        topic="Your current bid"
-                    />
-                    <Information
-                        information={doIHaveTheHighestBid ? "You're in the lead!" : "You're behind!"}
-                    />
-                    <div> {isOpen ? (<div>
-                        <Input
-                            errorMessage={'Addition bid has to be numerical and higher than 0'}
-                            label="Addition bid"
-                            placeholder="0"
-                            type="number"
-                            onChange={(event) => {
-                                setInput(event.target.value)
-                            }}
-                        />
-                        <div className="pb-5 pt-3">
-                            <Button
-                                onClick={
-                                    async () => {
-                                        await increaseBid()
+                ? (<div> {isOpen ?
+                        (<div className="flex flex-row">
+                            <div className="pl-44">
+                                <Button
+                                    onClick={
+                                        async () => {
+                                            if (doIHaveTheHighestBid) {
+                                                handleErrorNotification("You're the highest bidder therefore you can't withdraw!")
+                                            } else {
+                                                await leaveAuction({
+                                                    onSuccess: handleSuccess,
+                                                    onError: (error) => handleError(error.message)
+                                                })
+                                            }
+                                        }
                                     }
-                                }
+                                    
+                                    color="red"
+                                    text="Leave auction"
+                                    theme="colored"
+                                    size="large"
+                                    disabled={leaveAuctionIsLoading || leaveAuctionIsFetching}
+                                />
+                            </div>
+                            <div className="ml-auto pr-44">
+                                <Input
+                                    errorMessage={'Addition bid has to be numerical and higher than 0'}
+                                    label="Addition bid"
+                                    placeholder="0"
+                                    type="number"
+                                    onChange={(event) => {
+                                        setInput(event.target.value)
+                                    }}
 
-                                text="Increase bid"
-                                theme="primary"
-                                disabled={isLoading}
-                            />
-                        </div>
-                        <Button
-                            onClick={
-                                async () => {
-                                    if (doIHaveTheHighestBid) {
-                                        handleErrorNotification("You're the highest bidder therefore you can't withdraw!")
-                                    } else {
-                                        await leaveAuction({
-                                            onSuccess: handleSuccess,
-                                            onError: (error) => handleError(error.message)
-                                        })
+                                    state={
+                                        (parseFloat(input) >= parseFloat('0'))
+                                        ? "confirmed" : "error"
                                     }
-                                }
-                            }
+                                />
+                                <div className="pb-5 pt-7">
+                                    <Button
+                                        onClick={
+                                            async () => {
+                                                await increaseBid()
+                                            }
+                                        }
 
-                            text="Leave auction"
-                            theme="primary"
-                            disabled={leaveAuctionIsLoading || leaveAuctionIsFetching}
-                        />
+                                        text="Increase bid"
+                                        theme="colored"
+                                        color="blue"
+                                        size="large"    
+                                        disabled={isLoading}
+                                    />
+                                
+                                </div>
+                            </div>
                         </div>)
-                        : (<div>
+                        : (<div className="float-right pr-44">
                             {doIHaveTheHighestBid ? (<div>
                             <Button
                                 onClick={
@@ -541,42 +570,46 @@ export default function Auction() {
                                 }
 
                                 text="Route bid"
-                                theme="primary"
-                                disabled={leaveAuctionIsLoading || leaveAuctionIsFetching}
+                                theme="colored"
+                                color="blue"
+                                size="large"
+                                disabled={routeHighestBidIsLoading || routeHighestBidIsFetching}
                             />
                             </div>)
                             : (<div></div>)}
                         </div>)}
                     </div>
-                </div>)
+                )
                 : (<div>
-                    {isOpen ? (<div>
-                        <div className="pb-5 pt-3">
-                            <Input
-                                errorMessage={'Bid has to be numerical and higher than ' + ethers.utils.formatUnits(minimumBidPlusCollateral, "ether") + ' ETH'}
-                                label="Starting bid"
-                                placeholder={ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")}
-                                type="number"
-                                onChange={(event) => {
-                                    setInput(event.target.value)
-                                }}
-                                state={
-                                    (parseFloat(input) >= parseFloat(ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")))
-                                    ? "confirmed" : "error"
+                    {isOpen ? (
+                    <div className="float-right pr-44">
+                        <Input
+                            errorMessage={'Bid has to be numerical and higher than ' + ethers.utils.formatUnits(minimumBidPlusCollateral, "ether") + ' ETH'}
+                            label="Starting bid"
+                            placeholder={ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")}
+                            type="number"
+                            onChange={(event) => {
+                                setInput(event.target.value)
+                            }}
+                            state={
+                                (parseFloat(input) >= parseFloat(ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")))
+                                ? "confirmed" : "error"
+                            }
+                        />
+                        <div className="pb-5 pt-7">
+                            <Button
+                                onClick={
+                                    async () => {
+                                        await enterAuction()
+                                    }
                                 }
+
+                                text="Enter Auction"
+                                theme="colored"
+                                color="blue"
+                                disabled={isLoading}
                             />
                         </div>
-                        <Button
-                            onClick={
-                                async () => {
-                                    await enterAuction()
-                                }
-                            }
-
-                            text="Enter Auction"
-                            theme="primary"
-                            disabled={isLoading}
-                        />
                         </div>)
                         : (<div></div>)}
                 </div>)}
