@@ -246,8 +246,135 @@ export default function Auction() {
     const [numberOfBidders, setNumberOfBidders] = useState("0")
 
     /**
+     * time getters
+     */
+    const { runContractFunction: getStartTimestamp } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getStartTimestamp",
+        params: {},
+    })
+
+    const { runContractFunction: getCloseTimestamp } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getCloseTimestamp",
+        params: {},
+    })
+
+    const { runContractFunction: getInterval } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getInterval",
+        params: {},
+    })
+
+    const { runContractFunction: getClosedInterval } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getClosedInterval",
+        params: {},
+    })
+
+    function getTimePassedSince(timestamp) {
+        return timeNow() - timestamp
+    }
+
+    function getTimeLeftUntil(intervalValue, timePassedSince) {
+        return intervalValue - timePassedSince
+    }
+
+    function getFinishDate(timestampValue, intervalValue) {
+        return getDate(timestampValue.add(intervalValue))
+    }
+
+    /**
+     * time variables and constants
+     */
+    const [startTimestamp, setStartTimestamp] = useState(0)
+    const [closeTimestamp, setCloseTimestamp] = useState(0)
+    const [startDate, setStartDate] = useState("0")
+    const [timePassedSinceStart, setTimePassedSinceStart] = useState("0")
+    const [timePassedSinceAuctionClosed, setTimePassedSinceAuctionClosed] = useState("0")
+    const [timeUntilClosing, setTimeUntilClosing] = useState("0")
+    const [timeUntilDestroy, setTimeUntilDestroy] = useState("0")
+    const [interval, setInterval] = useState(0)
+    const [closeDate, setCloseDate] = useState("0")
+    const [destroyDate, setDestroyDate] = useState("0")
+    const [closedInterval, setClosedInterval] = useState(0)
+
+    /**
+     * helper time functions
+     */
+
+    function getDate(secondsSinceEpoch) {
+        return new Date(secondsSinceEpoch * 1000).toString()
+    }
+
+    function secondsToHms(d) {
+        d = Number(d);
+    
+        var h = Math.floor(d / 3600);
+        var m = Math.floor(d % 3600 / 60);
+        var s = Math.floor(d % 3600 % 60);
+    
+        return ('0' + h).slice(-2) + ":" + ('0' + m).slice(-2) + ":" + ('0' + s).slice(-2);
+    }
+
+    function timeNow() {
+        return Math.floor(Date.now() / 1000)
+    }
+
+    /**
      * rerendering functions
      */
+
+    async function fetchTimeConstants() {
+        const startTimestampValue = await getStartTimestamp()
+        const intervalValue = await getInterval()
+        const isOpenValue = await getIsOpen()
+        setStartTimestamp(startTimestampValue)
+        setInterval(intervalValue)
+        setStartDate(getDate(startTimestampValue))
+        if (isOpenValue) {
+            setCloseDate(getFinishDate(startTimestampValue, intervalValue))
+        } else {
+            const closedIntervalValue = await getClosedInterval()
+            setClosedInterval(closedIntervalValue)
+            const closeTimestampValue = await getCloseTimestamp()
+            setCloseTimestamp(closeTimestampValue)
+            setCloseDate(getDate(closeTimestampValue))
+            setDestroyDate(getFinishDate(closeTimestampValue, closedIntervalValue))
+        }
+    }
+
+    async function updateTimeUI(isOpenValue) {
+        let startTimestampValue, intervalValue, closedIntervalValue, closeTimestampValue
+        if (fetchedConstants) {
+            startTimestampValue = startTimestamp
+            intervalValue = interval
+            closedIntervalValue = closedInterval
+            closeTimestampValue = closeTimestamp
+        } else {
+            startTimestampValue = (await getStartTimestamp()).toNumber()
+            if (isOpenValue) { 
+                intervalValue = (await getInterval()).toNumber()
+            } else {
+                closedIntervalValue = (await getClosedInterval()).toNumber()
+                closeTimestampValue = (await getCloseTimestamp()).toNumber()
+            }
+        }
+
+        const timePassedSinceStartValue = getTimePassedSince(startTimestampValue)
+        setTimePassedSinceStart(secondsToHms(timePassedSinceStartValue))
+        if (isOpenValue) {
+            setTimeUntilClosing(secondsToHms(getTimeLeftUntil(intervalValue, timePassedSinceStartValue)))
+        } else {
+            const timePassedSinceAuctionClosedValue = getTimePassedSince(closeTimestampValue)
+            setTimePassedSinceAuctionClosed(secondsToHms(timePassedSinceAuctionClosedValue))
+            setTimeUntilDestroy(secondsToHms(getTimeLeftUntil(closedIntervalValue, timePassedSinceAuctionClosedValue)))
+        }
+    }
 
     async function fetchConstants() {
         const auctioneerCollateralAmountValue = await getAuctioneerCollateralAmount()
@@ -297,6 +424,8 @@ export default function Auction() {
             const auctionWinnerValue = await getAuctionWinner()
             setAuctionWinner(auctionWinnerValue)
         }
+
+        return isOpenValue
     }
 
     async function updateUI(minimalUpdate = false) {
@@ -306,11 +435,13 @@ export default function Auction() {
         setIsContractDestroyed(isContractDestroyedValue)
         if (!isContractDestroyedValue) {
             if (!fetchedConstants) {
+                await fetchTimeConstants()
                 await fetchConstants()
                 console.log('fetched constants')
             }
 
-            await updateUIVariables(minimalUpdate)
+            const isOpenValue = await updateUIVariables(minimalUpdate)
+            await updateTimeUI(isOpenValue)
             console.log('updated UI')
         }
 
@@ -415,6 +546,23 @@ export default function Auction() {
                     {isOpen ? (<Widget info={<Skeleton theme="text" />} title="Number of participants" />)
                         : (<Widget info={<Skeleton theme="text" />} title="Maximum number of participants" />)}
                 </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={<Skeleton theme="text" />} title="Start date" />
+                    {isOpen ? (<Widget info={<Skeleton theme="text" />} title="Automatic close date" />)
+                        : (<Widget info={<Skeleton theme="text" />} title="Date auction closed" />)}
+                </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={<Skeleton theme="text" />} title="Time passed since the start of the auction" />
+                    { isOpen ? 
+                    <Widget info={<Skeleton theme="text" />} title="Time left until auction automatically closes" />
+                    : <Widget info={<Skeleton theme="text" />} title="Time passed since the auction closed" /> }
+                </section>
+                { isOpen ? <div></div> :
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={<Skeleton theme="text" />} title="Destroy date" />
+                        <Widget info={<Skeleton theme="text" />} title="Time left until auction is destroyed" />
+                    </section>
+                }
             </div>)
             : (<div>
             {isContractDestroyed ?
@@ -457,6 +605,23 @@ export default function Auction() {
                     {isOpen ? (<Widget info={numberOfBidders + "/" + maximumNumberOfBidders} title="Number of participants" />)
                         : (<Widget info={maximumNumberOfBidders} title="Maximum number of participants" />)}
                 </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={startDate} title="Start date" />
+                    { isOpen ? <Widget info={closeDate} title="Automatic close date" /> :
+                    <Widget info={closeDate} title="Date auction closed" /> }
+                </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={timePassedSinceStart} title="Time passed since the start of the auction" />
+                    { isOpen ?
+                    <Widget info={timeUntilClosing} title="Time left until auction automatically closes" />
+                    : <Widget info={timePassedSinceAuctionClosed} title="Time passed since the auction closed" /> }
+                </section>
+                { isOpen ? <div></div> :
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={destroyDate} title="Destroy date" />
+                        <Widget info={timeUntilDestroy} title="Time left until auction is destroyed" />
+                    </section>
+                }
             </div>
             {amISeller
                 ? (<div>
@@ -535,7 +700,7 @@ export default function Auction() {
                                     }}
 
                                     state={
-                                        (parseFloat(input) >= parseFloat('0'))
+                                        (parseFloat(input) > parseFloat('0'))
                                         ? "confirmed" : "error"
                                     }
                                 />
