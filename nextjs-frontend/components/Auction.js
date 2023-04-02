@@ -276,6 +276,13 @@ export default function Auction() {
         params: {},
     })
 
+    const { runContractFunction: getOpenThreshold } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getOpenThreshold",
+        params: {},
+    })
+
     function getTimePassedSince(timestamp) {
         return timeNow() - timestamp
     }
@@ -288,20 +295,30 @@ export default function Auction() {
         return getDate(timestampValue.add(intervalValue))
     }
 
+    function getTimeUntilThreshold(openIntervalThresholdValue, timePassedSinceStartValue) {
+        if (timePassedSinceStartValue >= openIntervalThresholdValue) {
+            return "Seller can close the auction at his/her own discretion"
+        } else {
+            return secondsToHms(openIntervalThresholdValue - timePassedSinceStartValue)
+        }
+    }
+
     /**
      * time variables and constants
      */
     const [startTimestamp, setStartTimestamp] = useState(0)
     const [closeTimestamp, setCloseTimestamp] = useState(0)
     const [startDate, setStartDate] = useState("0")
+    const [closeDate, setCloseDate] = useState("0")
+    const [destroyDate, setDestroyDate] = useState("0")
     const [timePassedSinceStart, setTimePassedSinceStart] = useState("0")
     const [timePassedSinceAuctionClosed, setTimePassedSinceAuctionClosed] = useState("0")
     const [timeUntilClosing, setTimeUntilClosing] = useState("0")
     const [timeUntilDestroy, setTimeUntilDestroy] = useState("0")
+    const [timeUntilThreshold, setTimeUntilThreshold] = useState("0")
     const [interval, setInterval] = useState(0)
-    const [closeDate, setCloseDate] = useState("0")
-    const [destroyDate, setDestroyDate] = useState("0")
     const [closedInterval, setClosedInterval] = useState(0)
+    const [openIntervalThreshold, setOpenIntervalThreshold] = useState(0)
 
     /**
      * helper time functions
@@ -337,6 +354,7 @@ export default function Auction() {
         setInterval(intervalValue)
         setStartDate(getDate(startTimestampValue))
         if (isOpenValue) {
+            setOpenIntervalThreshold(await getOpenThreshold())
             setCloseDate(getFinishDate(startTimestampValue, intervalValue))
         } else {
             const closedIntervalValue = await getClosedInterval()
@@ -349,16 +367,18 @@ export default function Auction() {
     }
 
     async function updateTimeUI(isOpenValue) {
-        let startTimestampValue, intervalValue, closedIntervalValue, closeTimestampValue
+        let startTimestampValue, intervalValue, closedIntervalValue, closeTimestampValue, openIntervalThresholdValue
         if (fetchedConstants) {
             startTimestampValue = startTimestamp
             intervalValue = interval
             closedIntervalValue = closedInterval
             closeTimestampValue = closeTimestamp
+            openIntervalThresholdValue = openIntervalThreshold
         } else {
             startTimestampValue = (await getStartTimestamp()).toNumber()
             if (isOpenValue) { 
                 intervalValue = (await getInterval()).toNumber()
+                openIntervalThresholdValue = (await getOpenThreshold()).toNumber()
             } else {
                 closedIntervalValue = (await getClosedInterval()).toNumber()
                 closeTimestampValue = (await getCloseTimestamp()).toNumber()
@@ -368,6 +388,7 @@ export default function Auction() {
         const timePassedSinceStartValue = getTimePassedSince(startTimestampValue)
         setTimePassedSinceStart(secondsToHms(timePassedSinceStartValue))
         if (isOpenValue) {
+            setTimeUntilThreshold(getTimeUntilThreshold(openIntervalThresholdValue, timePassedSinceStartValue))
             setTimeUntilClosing(secondsToHms(getTimeLeftUntil(intervalValue, timePassedSinceStartValue)))
         } else {
             const timePassedSinceAuctionClosedValue = getTimePassedSince(closeTimestampValue)
@@ -553,9 +574,10 @@ export default function Auction() {
                 </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
                     <Widget info={<Skeleton theme="text" />} title="Time passed since the start of the auction" />
-                    { isOpen ? 
-                    <Widget info={<Skeleton theme="text" />} title="Time left until auction automatically closes" />
+                    { isOpen ? <Widget info={<Skeleton theme="text" />} title="Time left until auction automatically closes" />
                     : <Widget info={<Skeleton theme="text" />} title="Time passed since the auction closed" /> }
+                    { isOpen ? <Widget info={<Skeleton theme="text" />} title="Time left until seller can close auction" /> 
+                    : <div></div> }
                 </section>
                 { isOpen ? <div></div> :
                     <section style={{ display: 'flex', gap: '20px' }}>
@@ -612,9 +634,10 @@ export default function Auction() {
                 </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
                     <Widget info={timePassedSinceStart} title="Time passed since the start of the auction" />
-                    { isOpen ?
-                    <Widget info={timeUntilClosing} title="Time left until auction automatically closes" />
+                    { isOpen ? <Widget info={timeUntilClosing} title="Time left until auction automatically closes" />
                     : <Widget info={timePassedSinceAuctionClosed} title="Time passed since the auction closed" /> }
+                    { isOpen ? <Widget info={timeUntilThreshold} title="Time left until seller can close auction" />
+                    : <div></div> }
                 </section>
                 { isOpen ? <div></div> :
                     <section style={{ display: 'flex', gap: '20px' }}>
