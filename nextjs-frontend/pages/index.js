@@ -1,9 +1,9 @@
-import Auction from "../components/Auction";
+import Marketplace from "../components/Marketplace";
 
 export default function Home() {
   return (
     <div>
-      <Auction />
+      <Marketplace />
     </div>
   )
 }

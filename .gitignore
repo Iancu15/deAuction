@@ -45,4 +45,5 @@ nextjs-frontend/.next
 # generated files
 abi.json
 contractAddress.json
+bytecode.json
 deployments
