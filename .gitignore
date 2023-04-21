@@ -46,4 +46,6 @@ nextjs-frontend/.next
 abi.json
 contractAddress.json
 bytecode.json
+bytecode
 deployments
+Auction.json
