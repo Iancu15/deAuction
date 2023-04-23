@@ -1,5 +1,6 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
+const developmentChains = ["hardhat", "localhost"]
 const COLLATERAL_AMOUNT = ethers.utils.parseEther("0.1")
 const MINIMUM_BID = ethers.utils.parseEther("0.01")
 const INTERVAL = 7 * 24 * 3600
@@ -9,7 +10,9 @@ async function equal(a, b) {
     assert.equal((await a).toString(), b.toString())
 }
 
-describe("Auction", function () {
+!developmentChains.includes(network.name)
+    ? describe.skip
+    : describe("Auction", function () {
     let seller
     let auctioneer1
     let auction

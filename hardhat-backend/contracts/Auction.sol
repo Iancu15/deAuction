@@ -43,6 +43,10 @@ contract Auction is AutomationCompatibleInterface {
     uint256 private constant CLOSED_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_INTERVAL = 7 * 24 * 3600;
 
+    event ContractDeployed(
+        address contractAddress
+    );
+
     constructor(
         uint256 minimumBid,
         uint256 maximumNumberOfBidders,
@@ -66,6 +70,7 @@ contract Auction is AutomationCompatibleInterface {
         i_startTimestamp = block.timestamp;
         s_isOpen = true;
         s_currentNumberOfBidders = 0;
+        emit ContractDeployed(address(this));
     }
 
     modifier auctionClosed() {

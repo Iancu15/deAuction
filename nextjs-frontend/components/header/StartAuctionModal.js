@@ -33,9 +33,8 @@ export default function StartAuctionModal({ dismiss }) {
     }
 
     async function deployAuction() {
-        const seller = (await getCurrentUser())
+        const seller = await getCurrentUser()
         const auctionFactory = new ethers.ContractFactory(auctionArtifact.abi, auctionArtifact.bytecode, seller)
-        const sellerAddress = seller.getAddress()
         const args = [
             ethers.utils.parseEther(minimumBidInput),
             Number(maximumNumberOfBiddersInput),
