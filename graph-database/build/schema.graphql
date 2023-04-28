@@ -1,0 +1,4 @@
+type AuctionDeployed @entity(immutable: true) {
+  id: Bytes! # contract address
+  sellerAddress: Bytes!
+}

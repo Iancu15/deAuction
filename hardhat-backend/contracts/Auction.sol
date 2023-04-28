@@ -3,6 +3,7 @@
 pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
+// import "./EventEmitter.sol";
 
 error Auction__BidBelowMinimumBid(uint256 amountSent, uint256 minimumBid, uint256 collateralAmount);
 error Auction__ZeroStartingBid(uint256 amountSent, uint256 collateralAmount);
@@ -32,6 +33,7 @@ contract Auction is AutomationCompatibleInterface {
     uint256 private  s_closeTimestamp;
     bool public s_isOpen;
     address private immutable i_seller;
+//    EventEmitter private immutable i_eventEmitter;
     uint256 private immutable i_minimumBid;
     uint256 private immutable i_maximumNumberOfBidders;
     uint256 private immutable i_auctioneerCollateralAmount;
@@ -43,15 +45,13 @@ contract Auction is AutomationCompatibleInterface {
     uint256 private constant CLOSED_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_INTERVAL = 7 * 24 * 3600;
 
-    event ContractDeployed(
-        address contractAddress
-    );
-
     constructor(
         uint256 minimumBid,
         uint256 maximumNumberOfBidders,
         uint256 auctioneerCollateralAmount,
-        uint256 interval
+        uint256 interval,
+        address sellerAddress
+//        address eventEmitterAddress
     ) payable {
         if (interval < OPEN_INTERVAL_THRESHOLD) {
             revert Auction__IntervalBelowThreshold(interval, OPEN_INTERVAL_THRESHOLD);
@@ -61,8 +61,12 @@ contract Auction is AutomationCompatibleInterface {
             revert Auction__IntervalAboveMaximum(interval, MAXIMUM_INTERVAL);
         }
 
+        if (msg.value < auctioneerCollateralAmount) {
+            revert Auction__DidntCoverCollateral(msg.value, auctioneerCollateralAmount);
+        }
+
         i_minimumBid = minimumBid;
-        i_seller = msg.sender;
+        i_seller = sellerAddress;
         i_maximumNumberOfBidders = maximumNumberOfBidders;
         i_auctioneerCollateralAmount = auctioneerCollateralAmount;
         i_sellerCollateralAmount = msg.value;
@@ -70,7 +74,10 @@ contract Auction is AutomationCompatibleInterface {
         i_startTimestamp = block.timestamp;
         s_isOpen = true;
         s_currentNumberOfBidders = 0;
-        emit ContractDeployed(address(this));
+
+        // EventEmitter eventEmitter = EventEmitter(eventEmitterAddress);
+        // i_eventEmitter = eventEmitter;
+        //eventEmitter.emitContractDeployed(msg.sender);
     }
 
     modifier auctionClosed() {

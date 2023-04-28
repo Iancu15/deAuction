@@ -51,13 +51,13 @@ module.exports = {
         ]
     },
     namedAccounts: {
-        seller: {
+        deployer: {
             default: 0
         },
-        auctioneer1: {
+        account1: {
             default: 1
         },
-        auctioneer2: {
+        account2: {
             default: 2
         }
     },

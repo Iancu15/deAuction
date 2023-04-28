@@ -1,0 +1,49 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: AuctionFactory
+    network: sepolia
+    source:
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+      abi: AuctionFactory
+      startBlock: 3377176
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/factory.ts
+      entities:
+        - AuctionDeployed
+      abis:
+        - name: AuctionFactory
+          file: ./abis/AuctionFactory.json
+      eventHandlers:
+        - event: AuctionDeployed(address,address)
+          handler: handleAuctionDeployed
+templates:
+  - name: Auction
+    kind: ethereum/contract
+    network: sepolia
+    source:
+      abi: Auction
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      file: ./src/auction.ts
+      entities:
+        - Auction
+      abis:
+        - name: Auction
+          file: ./abis/Auction.json
+      # eventHandlers:
+      #   - event: TokenPurchase(address,uint256,uint256)
+      #     handler: handleTokenPurchase
+      #   - event: EthPurchase(address,uint256,uint256)
+      #     handler: handleEthPurchase
+      #   - event: AddLiquidity(address,uint256,uint256)
+      #     handler: handleAddLiquidity
+      #   - event: RemoveLiquidity(address,uint256,uint256)
+      #     handler: handleRemoveLiquidity

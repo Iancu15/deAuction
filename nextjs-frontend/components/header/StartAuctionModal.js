@@ -2,6 +2,8 @@ import { Modal, Typography, Input, useNotification } from "web3uikit"
 import { useState } from "react"
 import { ethers } from "ethers"
 const auctionArtifact = require("../../constants/Auction.json")
+const factoryAbi = require("../../constants/FactoryAbi.json")
+const factoryAddress = require("../../constants/factoryAddress.json")
 
 export default function StartAuctionModal({ dismiss }) {
     const dispatch = useNotification()
@@ -11,6 +13,16 @@ export default function StartAuctionModal({ dismiss }) {
     const [maximumNumberOfBiddersInput, setMaximumNumberOfBiddersInput] = useState("0")
     const [intervalInput, setIntervalInput] = useState("0")
     const inputWidth = "22vw"
+
+    const handleSuccessNotification = () => {
+        dispatch({
+            type: 'success',
+            message: 'Transaction Complete!',
+            title: 'Transaction Notification',
+            position: "topR",
+            icon: 'checkmark',
+        })
+    }
 
     const handleBellNotification = (type, message, title) => {
         dispatch({
@@ -26,28 +38,84 @@ export default function StartAuctionModal({ dismiss }) {
         handleBellNotification('error', errorMessage, 'Transaction Error')
     }
 
+    const handleInfoNotification = (message) => {
+        handleBellNotification('info', message, 'Transaction Information')
+    }
+
+    const handleWarningNotification = (message) => {
+        handleBellNotification('warning', message, 'Transaction Warning')
+    }
+
+    const handleError = (errorMessage) => {
+        if (errorMessage.includes('web3')) {
+            handleWarningNotification("You aren't connected to your wallet! Please connect.")
+        } else if (errorMessage.includes('denied') || errorMessage.includes('user rejected transaction') || errorMessage.includes('r is undefined')) {
+            handleInfoNotification("Transaction wasn't send.")
+        } else {
+            handleErrorNotification(errorMessage)
+        }
+    }
+
+    const handleSuccess = async (tx) => {
+        try {
+            await tx.wait(1)
+            handleSuccessNotification(tx)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    async function getFactory() {
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        return new ethers.Contract(factoryAddress.address, factoryAbi, provider)
+    }
+
     async function getCurrentUser() {
         const provider = new ethers.providers.Web3Provider(window.ethereum)
         await provider.send("eth_requestAccounts", []);
         return provider.getSigner();
     }
 
+    // async function deployAuction() {
+    //     const seller = await getCurrentUser()
+    //     const auctionFactory = new ethers.ContractFactory(auctionArtifact.abi, auctionArtifact.bytecode, seller)
+    //     const args = [
+    //         ethers.utils.parseEther(minimumBidInput),
+    //         Number(maximumNumberOfBiddersInput),
+    //         ethers.utils.parseEther(auctioneerCollateralAmountInput),
+    //         Number(intervalInput) * 3600,
+    //         {
+    //             value: ethers.utils.parseEther(sellerCollateralAmountInput)
+    //         }
+    //     ]
+
+    //     const auction = await auctionFactory.deploy(...args)
+    //     const deployedTransaction = await auction.deployTransaction.wait()
+    //     const startBlock = deployedTransaction.blockNumber
+    //     console.log(`Auction deployed at ${auction.address}`)
+    // }
+
     async function deployAuction() {
         const seller = await getCurrentUser()
-        const auctionFactory = new ethers.ContractFactory(auctionArtifact.abi, auctionArtifact.bytecode, seller)
-        const args = [
-            ethers.utils.parseEther(minimumBidInput),
-            Number(maximumNumberOfBiddersInput),
-            ethers.utils.parseEther(auctioneerCollateralAmountInput),
-            Number(intervalInput) * 3600,
-            {
-                value: ethers.utils.parseEther(sellerCollateralAmountInput)
-            }
-        ]
+        const sellerAddress = await seller.getAddress()
+        const auctionFactory = await getFactory()
+        try {
+            const tx = await auctionFactory.connect(seller).deployAuction(
+                ethers.utils.parseEther(minimumBidInput),
+                Number(maximumNumberOfBiddersInput),
+                ethers.utils.parseEther(auctioneerCollateralAmountInput),
+                Number(intervalInput) * 3600,
+                {
+                    value: ethers.utils.parseEther(sellerCollateralAmountInput),
+                    gasLimit: 2000000
+                }
+            )
+            await handleSuccess(tx)
+        } catch (error) {
+            handleError(error.message)
+        }
 
-        const auction = await auctionFactory.deploy(...args)
-
-        console.log(`Auction deployed at ${auction.address}`)
+        console.log(`Auction deployed`)
     }
 
     function checkMinumumBid() {
