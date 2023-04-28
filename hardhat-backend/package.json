@@ -29,7 +29,8 @@
     "solc": "^0.8.19",
     "solhint": "^3.4.0",
     "solidity-coverage": "^0.8.2",
-    "typechain": "^8.1.0"
+    "typechain": "^8.1.0",
+    "web3": "^1.9.0"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.6.1",

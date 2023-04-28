@@ -20,7 +20,7 @@ const COMPILER_SETTINGS = {
 }
 
 module.exports = {
-    defaultNetwork: "hardhat",
+    defaultNetwork: "sepolia",
     networks: {
         hardhat: {
             chainId: 31337,

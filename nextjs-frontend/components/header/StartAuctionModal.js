@@ -107,7 +107,7 @@ export default function StartAuctionModal({ dismiss }) {
                 Number(intervalInput) * 3600,
                 {
                     value: ethers.utils.parseEther(sellerCollateralAmountInput),
-                    gasLimit: 2000000
+                    gasLimit: 3000000
                 }
             )
             await handleSuccess(tx)
