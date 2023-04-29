@@ -2,10 +2,9 @@ import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
 import { Button, Input, useNotification, Widget, Hero, Skeleton } from "web3uikit"
-const contractAddress = require("../constants/contractAddress.json")
-const abi = require("../constants/abi.json")
+const abi = require("../constants/AuctionAbi.json")
 
-export default function Auction() {
+export default function Auction({ contractAddress }) {
     const { isWeb3Enabled } = useMoralis()
     const dispatch = useNotification()
 
@@ -553,10 +552,11 @@ export default function Auction() {
             {statesAreLoading ? (
             <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
                 <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={<Skeleton theme="text" />} title="Contract address" />
                     <Widget info={<Skeleton theme="text" />} title="Seller address" />
-                    <Widget info={<Skeleton theme="text" />} title="Seller collateral amount" />
                 </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={<Skeleton theme="text" />} title="Seller collateral amount" />
                     <Widget info={<Skeleton theme="text" />} title="Minimum bid" />
                     <Widget info={<Skeleton theme="text" />} title="Auctioneer collateral amount" />
                     <Widget info={<Skeleton theme="text" />} title="Highest bid currently" />
@@ -613,10 +613,11 @@ export default function Auction() {
             ) : (<div></div>)}
             <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
                 <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={contractAddress} title="Contract address" />
                     <Widget info={sellerAddress} title="Seller address" />
-                    <Widget info={getEtherOutput(sellerCollateralAmount)} title="Seller collateral amount" />
                 </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={getEtherOutput(sellerCollateralAmount)} title="Seller collateral amount" />
                     <Widget info={getEtherOutput(minimumBid)} title="Minimum bid" />
                     <Widget info={getEtherOutput(auctioneerCollateralAmount)} title="Auctioneer collateral amount" />
                     <Widget info={getEtherOutput(currentHighestBid)} title="Highest bid currently" />
