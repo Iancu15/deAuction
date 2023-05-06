@@ -650,7 +650,7 @@ export default function Auction({ contractAddress }) {
             {amISeller
                 ? (<div>
                     {isOpen ?
-                    (<div className="pl-44">
+                    (<div className="pl-44 pb-10">
                         <Button
                             onClick={
                                 async () => {

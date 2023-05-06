@@ -3,7 +3,6 @@
 pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
-// import "./EventEmitter.sol";
 
 error Auction__BidBelowMinimumBid(uint256 amountSent, uint256 minimumBid, uint256 collateralAmount);
 error Auction__ZeroStartingBid(uint256 amountSent, uint256 collateralAmount);
@@ -31,9 +30,9 @@ contract Auction is AutomationCompatibleInterface {
     uint256 private s_currentHighestBid;
     uint256 private s_currentNumberOfBidders;
     uint256 private  s_closeTimestamp;
-    bool public s_isOpen;
+    bool private s_isOpen;
+    string private s_infoCID;
     address private immutable i_seller;
-//    EventEmitter private immutable i_eventEmitter;
     uint256 private immutable i_minimumBid;
     uint256 private immutable i_maximumNumberOfBidders;
     uint256 private immutable i_auctioneerCollateralAmount;
@@ -50,8 +49,8 @@ contract Auction is AutomationCompatibleInterface {
         uint256 maximumNumberOfBidders,
         uint256 auctioneerCollateralAmount,
         uint256 interval,
-        address sellerAddress
-//        address eventEmitterAddress
+        address sellerAddress,
+        string memory infoCID
     ) payable {
         if (interval < OPEN_INTERVAL_THRESHOLD) {
             revert Auction__IntervalBelowThreshold(interval, OPEN_INTERVAL_THRESHOLD);
@@ -72,12 +71,9 @@ contract Auction is AutomationCompatibleInterface {
         i_sellerCollateralAmount = msg.value;
         i_interval = interval;
         i_startTimestamp = block.timestamp;
+        s_infoCID = infoCID;
         s_isOpen = true;
         s_currentNumberOfBidders = 0;
-
-        // EventEmitter eventEmitter = EventEmitter(eventEmitterAddress);
-        // i_eventEmitter = eventEmitter;
-        //eventEmitter.emitContractDeployed(msg.sender);
     }
 
     modifier auctionClosed() {
@@ -325,6 +321,10 @@ contract Auction is AutomationCompatibleInterface {
 
     function isOpen() public view returns (bool) {
         return s_isOpen;
+    }
+
+    function getInfoCID() public view returns (string memory) {
+        return s_infoCID;
     }
 
     function getNumberOfBidders() public view returns (uint256) {
