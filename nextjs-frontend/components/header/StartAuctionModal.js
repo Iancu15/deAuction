@@ -1,7 +1,6 @@
 import { Modal, Typography, Input, Upload, TextArea, useNotification } from "web3uikit"
 import { useState } from "react"
 import { ethers } from "ethers"
-import Image from "next/image"
 import axios from 'axios'
 const factoryAbi = require("../../constants/FactoryAbi.json")
 const factoryAddress = require("../../constants/factoryAddress.json")
@@ -17,6 +16,11 @@ export default function StartAuctionModal({ dismiss }) {
     const [descriptionInput, setDescriptionInput] = useState("0")
     const [image, setImage] = useState(``)
     const inputWidth = "22vw"
+
+    function printHex(text) {
+        const hexContent = Buffer.from(text).toString('hex');
+        console.log(hexContent);
+    }
 
     const handleSuccessNotification = () => {
         dispatch({
@@ -80,9 +84,26 @@ export default function StartAuctionModal({ dismiss }) {
         return provider.getSigner();
     }
 
+    async function getFromIpfs() {
+        const cid = 'bafkreien6qw7qixl6ptkvmxmxovxspxhyzw3o6dv2py3z2pormh5iwi7fa'
+        const auctionInfo = (await axios.put(
+            'http://localhost:3000/api/ipfs/cat/json',
+            {
+                data: cid
+            }
+        )).data
+
+        const image = (await axios.put(
+            'http://localhost:3000/api/ipfs/cat/image',
+            {
+                data: auctionInfo.imageCID
+            }
+        )).data
+    }
+
     async function storeOnIpfs() {
-        const imageCID = await (await axios.put(
-            'http://localhost:3000/api/ipfs/upload',
+        const imageCID = (await axios.put(
+            'http://localhost:3000/api/ipfs/upload/image',
             image,
             {
                 headers: {
@@ -98,43 +119,51 @@ export default function StartAuctionModal({ dismiss }) {
         }
 
         return await axios.put(
-            'http://localhost:3000/api/ipfs/upload',
-            JSON.stringify(auctionInfo)
+            'http://localhost:3000/api/ipfs/upload/json',
+            {
+                data: JSON.stringify(auctionInfo)
+            }
         )
-        // .then(function (response) {
-        //     console.log(response.data.cid)
-        // })
-        // .catch(function (error) {
-        //     console.log(error);
-        // })
+    }
+
+    async function readAndStoreImage(image) {
+        var reader = new FileReader()
+        reader.onload = async function(event) {
+            await storeOnIpfs(event.target.result)
+            console.log(event.target.result)
+        }
+
+        reader.readAsDataURL(image)
     }
 
     async function deployAuction() {
+        var ipfsURI = ""
         try {
-            const ipfsURI = await (await storeOnIpfs()).data.cid
-            console.log(ipfsURI)
+            ipfsURI = (await storeOnIpfs()).data.cid
         } catch (err) {
             console.log(err)
         }
-        // const seller = await getCurrentUser()
-        // const auctionFactory = await getFactory()
-        // try {
-        //     const tx = await auctionFactory.connect(seller).deployAuction(
-        //         ethers.utils.parseEther(minimumBidInput),
-        //         Number(maximumNumberOfBiddersInput),
-        //         ethers.utils.parseEther(auctioneerCollateralAmountInput),
-        //         Number(intervalInput) * 3600,
-        //         {
-        //             value: ethers.utils.parseEther(sellerCollateralAmountInput),
-        //             gasLimit: 3000000
-        //         }
-        //     )
-        //     await handleSuccess(tx)
-        // } catch (error) {
-        //     handleError(error.message)
-        // }
+        
+        const seller = await getCurrentUser()
+        const auctionFactory = await getFactory()
+        try {
+            const tx = await auctionFactory.connect(seller).deployAuction(
+                ethers.utils.parseEther(minimumBidInput),
+                Number(maximumNumberOfBiddersInput),
+                ethers.utils.parseEther(auctioneerCollateralAmountInput),
+                Number(intervalInput) * 3600,
+                ipfsURI,
+                {
+                    value: ethers.utils.parseEther(sellerCollateralAmountInput),
+                    gasLimit: 3000000
+                }
+            )
+            await handleSuccess(tx)
+        } catch (error) {
+            handleError(error.message)
+        }
 
-        // console.log(`Auction deployed`)
+        console.log(`Auction deployed`)
     }
 
     function checkMinumumBid() {
@@ -151,13 +180,11 @@ export default function StartAuctionModal({ dismiss }) {
     }
 
     function checkMaximumNoBidders() {
-        //return Number(maximumNumberOfBiddersInput) >= 5
-        return true
+        return Number(maximumNumberOfBiddersInput) >= 5
     }
 
     function checkInterval() {
-        //return Number(intervalInput) >= 24
-        return true
+        return Number(intervalInput) >= 24
     }
 
     function checkTitle() {
@@ -175,13 +202,6 @@ export default function StartAuctionModal({ dismiss }) {
     async function onChange(e) {
         if (e != null) {
             setImage(e)
-            // var reader  = new FileReader()
-            // reader.onload = (e) => {
-            //     const { result } = e.target;
-            //     setImage(result)
-            // }
-
-            // const image = reader.readAsDataURL(e)
         }
     }
 
@@ -304,13 +324,13 @@ export default function StartAuctionModal({ dismiss }) {
                         }
                         width={inputWidth}
                     />
-                    {/* { image ?
-                    <Image
-                        loader={() => image}
+                    {/* { image && 
+                    (<img
                         src={image}
                         height="200"
                         width="200"
-                    /> : <></>
+                        alt="Red dot"
+                    />)
                     } */}
                 </div>
                 <Upload

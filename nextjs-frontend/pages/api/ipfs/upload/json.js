@@ -10,7 +10,8 @@ async function uploadToIpfs(content) {
 }
 
 export default function handler(req, res) {
-    uploadToIpfs(JSON.stringify(req.body)).then((cid) => {
+    const { data } = req.body
+    uploadToIpfs(data).then((cid) => {
         res.status(200).json({"cid": cid})
     })
 }  

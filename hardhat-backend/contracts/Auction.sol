@@ -22,6 +22,7 @@ error Auction__ThresholdNotReached(uint256 timeUntilThreshold);
 error Auction__UpkeepNotNeeded();
 error Auction__IntervalAboveMaximum(uint256 interval, uint256 maxInterval);
 error Auction__AlreadyEnteredAuction();
+error Auction__MaximumNumberOfBiddersTooLow(uint256 yourValue, uint256 minimumExpectedValue);
 
 contract Auction is AutomationCompatibleInterface {
     mapping(address => uint256) private s_auctioneerToCurrentBid;
@@ -43,6 +44,7 @@ contract Auction is AutomationCompatibleInterface {
     //uint256 private constant OPEN_INTERVAL_THRESHOLD = 0;
     uint256 private constant CLOSED_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_INTERVAL = 7 * 24 * 3600;
+    uint256 private constant MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE = 5;
 
     constructor(
         uint256 minimumBid,
@@ -62,6 +64,10 @@ contract Auction is AutomationCompatibleInterface {
 
         if (msg.value < auctioneerCollateralAmount) {
             revert Auction__DidntCoverCollateral(msg.value, auctioneerCollateralAmount);
+        }
+
+        if (maximumNumberOfBidders < MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE) {
+            revert Auction__MaximumNumberOfBiddersTooLow(maximumNumberOfBidders, MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE);
         }
 
         i_minimumBid = minimumBid;

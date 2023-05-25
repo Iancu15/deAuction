@@ -7,6 +7,7 @@ import "./Auction.sol";
 contract AuctionFactory {
     uint256 private constant OPEN_INTERVAL_THRESHOLD = 24 * 3600;
     uint256 private constant MAXIMUM_INTERVAL = 7 * 24 * 3600;
+    uint256 private constant MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE = 5;
 
     event AuctionDeployed(
         address contractAddress,
@@ -30,6 +31,10 @@ contract AuctionFactory {
 
         if (msg.value < auctioneerCollateralAmount) {
             revert Auction__DidntCoverCollateral(msg.value, auctioneerCollateralAmount);
+        }
+
+        if (maximumNumberOfBidders < MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE) {
+            revert Auction__MaximumNumberOfBiddersTooLow(maximumNumberOfBidders, MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE);
         }
 
         Auction auction = new Auction{value: msg.value}(
