@@ -1,7 +1,7 @@
 import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
-import { Button, Input, useNotification, Widget, Hero, Skeleton } from "web3uikit"
+import { Button, Input, useNotification, Widget, Hero, Skeleton, Typography } from "web3uikit"
 const abi = require("../constants/AuctionAbi.json")
 
 export default function Auction({ contractAddress }) {
@@ -282,6 +282,10 @@ export default function Auction({ contractAddress }) {
         params: {},
     })
 
+    /**
+     * time functions
+     */
+
     function getTimePassedSince(timestamp) {
         return timeNow() - timestamp
     }
@@ -296,7 +300,7 @@ export default function Auction({ contractAddress }) {
 
     function getTimeUntilThreshold(openIntervalThresholdValue, timePassedSinceStartValue) {
         if (timePassedSinceStartValue >= openIntervalThresholdValue) {
-            return "Seller can close the auction at his/her own discretion"
+            return secondsToHms(0)
         } else {
             return secondsToHms(openIntervalThresholdValue - timePassedSinceStartValue)
         }
@@ -613,8 +617,25 @@ export default function Auction({ contractAddress }) {
             ) : (<div></div>)}
             <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
                 <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={contractAddress} title="Contract address" />
-                    <Widget info={sellerAddress} title="Seller address" />
+                    <Widget info={
+                        <Typography
+                            copyable
+                            onCopy={function noRefCheck(){}}
+                            variant="body18"
+                            color="#000000"
+                        >
+                            {contractAddress}
+                        </Typography>
+                    } title="Contract address" />
+                    <Widget info={<Typography
+                            copyable
+                            onCopy={function noRefCheck(){}}
+                            variant="body18"
+                            color="#000000"
+                        >
+                            {sellerAddress}
+                        </Typography>
+                    } title="Seller address" />
                 </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
                     <Widget info={getEtherOutput(sellerCollateralAmount)} title="Seller collateral amount" />

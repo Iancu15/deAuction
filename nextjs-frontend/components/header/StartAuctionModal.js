@@ -84,24 +84,8 @@ export default function StartAuctionModal({ dismiss }) {
         return provider.getSigner();
     }
 
-    async function getFromIpfs() {
-        const cid = 'bafkreien6qw7qixl6ptkvmxmxovxspxhyzw3o6dv2py3z2pormh5iwi7fa'
-        const auctionInfo = (await axios.put(
-            'http://localhost:3000/api/ipfs/cat/json',
-            {
-                data: cid
-            }
-        )).data
 
-        const image = (await axios.put(
-            'http://localhost:3000/api/ipfs/cat/image',
-            {
-                data: auctionInfo.imageCID
-            }
-        )).data
-    }
-
-    async function storeOnIpfs() {
+    async function storeOnIpfs(image) {
         const imageCID = (await axios.put(
             'http://localhost:3000/api/ipfs/upload/image',
             image,
@@ -126,24 +110,18 @@ export default function StartAuctionModal({ dismiss }) {
         )
     }
 
-    async function readAndStoreImage(image) {
+
+    async function storeImageAndDeployAuction() {
         var reader = new FileReader()
         reader.onload = async function(event) {
-            await storeOnIpfs(event.target.result)
-            console.log(event.target.result)
+            const ipfsURI = (await storeOnIpfs(event.target.result)).data.cid
+            await deployAuction(ipfsURI)
         }
 
         reader.readAsDataURL(image)
     }
 
-    async function deployAuction() {
-        var ipfsURI = ""
-        try {
-            ipfsURI = (await storeOnIpfs()).data.cid
-        } catch (err) {
-            console.log(err)
-        }
-        
+    async function deployAuction(ipfsURI) {
         const seller = await getCurrentUser()
         const auctionFactory = await getFactory()
         try {
@@ -218,7 +196,7 @@ export default function StartAuctionModal({ dismiss }) {
                     if (checkMinumumBid() && checkAuctioneerCollateral() && checkSellerCollateral() &&
                     checkMaximumNoBidders() && checkInterval() && checkTitle()) {
                         dismiss()
-                        await deployAuction()
+                        await storeImageAndDeployAuction()
                     } else {
                         handleErrorNotification("One or more of the submitted inputs doesn't respect its format and conditions.")
                     }
@@ -324,14 +302,6 @@ export default function StartAuctionModal({ dismiss }) {
                         }
                         width={inputWidth}
                     />
-                    {/* { image && 
-                    (<img
-                        src={image}
-                        height="200"
-                        width="200"
-                        alt="Red dot"
-                    />)
-                    } */}
                 </div>
                 <Upload
                     onChange={(event) => {

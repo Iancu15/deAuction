@@ -14,7 +14,6 @@ async function getFromIpfs(cid) {
 export default function handler(req, res) {
     const { data } = req.body
     getFromIpfs(data).then((file) => {
-        console.log(file)
         res.status(200).send(file)
     })
 }  
