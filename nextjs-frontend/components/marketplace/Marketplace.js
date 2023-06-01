@@ -17,12 +17,15 @@ export default function Marketplace() {
     const { loading, error, data: auctions } = useQuery(GET_AUCTIONS)
     const { isWeb3Enabled } = useMoralis()
     const [currUserAddress, setCurrUserAddress] = useState(``)
+    const [statesAreLoading, setStatesAreLoading] = useState(true)
 
     async function updateUserAddress() {
-        const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-        await provider.send("eth_requestAccounts", []);
-        const signer = provider.getSigner();
+        setStatesAreLoading(true)
+        const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+        await provider.send("eth_requestAccounts", [])
+        const signer = provider.getSigner()
         setCurrUserAddress(await signer.getAddress())
+        setStatesAreLoading(false)
     }
 
     useEffect(() => {
@@ -34,8 +37,8 @@ export default function Marketplace() {
     return (
         <div className="flex flex-wrap gap-8 p-8">
             {isWeb3Enabled ? (
-                loading || !auctions ? (
-                    <div>Loading...</div>
+                loading || !auctions || statesAreLoading ? (
+                    <div></div>
                 ) : (
                     auctions.auctionDeployeds.map((auction) => {
                         const { id, sellerAddress } = auction
@@ -49,7 +52,7 @@ export default function Marketplace() {
                     })
                 )
             ) : (
-                <div>Web3 Currently Not Enabled</div>
+                <div></div>
             )}
         </div>
     )

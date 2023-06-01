@@ -1,7 +1,8 @@
 import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
-import { Button, Input, useNotification, Widget, Hero, Skeleton, Typography } from "web3uikit"
+import { Button, Input, useNotification, Widget, Hero, Skeleton, Typography, Accordion } from "web3uikit"
+import axios from 'axios'
 const abi = require("../constants/AuctionAbi.json")
 
 export default function Auction({ contractAddress }) {
@@ -167,6 +168,13 @@ export default function Auction({ contractAddress }) {
         params: {},
     })
 
+    const { runContractFunction: getInfoCID } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getInfoCID",
+        params: {},
+    })
+
     /**
      * constants
      */
@@ -300,7 +308,7 @@ export default function Auction({ contractAddress }) {
 
     function getTimeUntilThreshold(openIntervalThresholdValue, timePassedSinceStartValue) {
         if (timePassedSinceStartValue >= openIntervalThresholdValue) {
-            return secondsToHms(0)
+            return "Seller can close the auction at his/her own discretion"
         } else {
             return secondsToHms(openIntervalThresholdValue - timePassedSinceStartValue)
         }
@@ -400,6 +408,37 @@ export default function Auction({ contractAddress }) {
         }
     }
 
+    /**
+     * ipfs stored variables
+     */
+    const [image, setImage] = useState(``)
+    const [title, setTitle] = useState(``)
+    const [description, setDescription] = useState(``)
+    const [infoCID, setInfoCID] = useState(``)
+    const [imageCID, setImageCID] = useState(``)
+
+    async function getInfoFromIpfs() {
+        const cid = await getInfoCID()
+        setInfoCID(cid)
+        const auctionInfo = (await axios.put(
+            'http://localhost:3000/api/ipfs/cat/json',
+            {
+                data: cid
+            }
+        )).data
+
+        setTitle(auctionInfo.title)
+        setDescription(auctionInfo.description)
+        setImageCID(auctionInfo.imageCID)
+        const fetchedImage = (await axios.put(
+            'http://localhost:3000/api/ipfs/cat/image',
+            {
+                data: auctionInfo.imageCID
+            }
+        )).data
+        setImage(fetchedImage)
+    }
+
     async function fetchConstants() {
         const auctioneerCollateralAmountValue = await getAuctioneerCollateralAmount()
         const minimumBidValue = await getMinimumBid()
@@ -413,6 +452,7 @@ export default function Auction({ contractAddress }) {
         setSellerAddress(await getSellerAddress())
         setAuctioneerCollateralAmount(auctioneerCollateralAmountValue.toString())
         setSellerCollateralAmount(await getSellerCollateralAmount())
+        await getInfoFromIpfs()
         setFetchedConstants(true)
     }
 
@@ -454,10 +494,10 @@ export default function Auction({ contractAddress }) {
 
     async function updateUI(minimalUpdate = false) {
         console.log('updating UI...')
-        setStatesAreLoading(true)
         const isContractDestroyedValue = await wasContractDestroyed()
         setIsContractDestroyed(isContractDestroyedValue)
         if (!isContractDestroyedValue) {
+            setStatesAreLoading(true)
             if (!fetchedConstants) {
                 await fetchTimeConstants()
                 await fetchConstants()
@@ -466,10 +506,11 @@ export default function Auction({ contractAddress }) {
 
             const isOpenValue = await updateUIVariables(minimalUpdate)
             await updateTimeUI(isOpenValue)
+            setStatesAreLoading(false)
             console.log('updated UI')
+        } else {
+            setStatesAreLoading(false)
         }
-
-        setStatesAreLoading(false)
     }
 
     if (typeof window !== "undefined") {
@@ -556,66 +597,115 @@ export default function Auction({ contractAddress }) {
             {statesAreLoading ? (
             <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
                 <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton theme="text" />} title="Contract address" />
-                    <Widget info={<Skeleton theme="text" />} title="Seller address" />
+                    <div className="w-full">
+                        <Accordion
+                            id="accordion"
+                            theme="blue"
+                            title={<Skeleton width="200px" theme="text" />}
+                            subTitle="Press for description"
+                        >
+                        </Accordion>
+                    </div>
                 </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton theme="text" />} title="Seller collateral amount" />
-                    <Widget info={<Skeleton theme="text" />} title="Minimum bid" />
-                    <Widget info={<Skeleton theme="text" />} title="Auctioneer collateral amount" />
-                    <Widget info={<Skeleton theme="text" />} title="Highest bid currently" />
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Contract address" />
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Seller address" />
                 </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton theme="text" />} title="Auction status" />
-                    <Widget info={<Skeleton theme="text" />} title="Contract balance" />
-                    {isOpen ? (<Widget info={<Skeleton theme="text" />} title="Number of participants" />)
-                        : (<Widget info={<Skeleton theme="text" />} title="Maximum number of participants" />)}
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Seller collateral amount" />
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Minimum bid" />
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Auctioneer collateral amount" />
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Highest bid currently" />
                 </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton theme="text" />} title="Start date" />
-                    {isOpen ? (<Widget info={<Skeleton theme="text" />} title="Automatic close date" />)
-                        : (<Widget info={<Skeleton theme="text" />} title="Date auction closed" />)}
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Auction status" />
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Contract balance" />
+                    {isOpen ? (<Widget info={<Skeleton width="200px" theme="text" />} title="Number of participants" />)
+                        : (<Widget info={<Skeleton width="200px" theme="text" />} title="Maximum number of participants" />)}
                 </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton theme="text" />} title="Time passed since the start of the auction" />
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Start date" />
+                    {isOpen ? (<Widget info={<Skeleton width="200px" theme="text" />} title="Automatic close date" />)
+                        : (<Widget info={<Skeleton width="200px" theme="text" />} title="Date auction closed" />)}
+                </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="Time passed since the start of the auction" />
                     { isOpen ? <Widget info={<Skeleton theme="text" />} title="Time left until auction automatically closes" />
-                    : <Widget info={<Skeleton theme="text" />} title="Time passed since the auction closed" /> }
-                    { isOpen ? <Widget info={<Skeleton theme="text" />} title="Time left until seller can close auction" /> 
+                    : <Widget info={<Skeleton width="200px" theme="text" />} title="Time passed since the auction closed" /> }
+                    { isOpen ? <Widget info={<Skeleton width="200px" theme="text" />} title="Time left until seller can close auction" /> 
                     : <div></div> }
                 </section>
                 { isOpen ? <div></div> :
                     <section style={{ display: 'flex', gap: '20px' }}>
-                        <Widget info={<Skeleton theme="text" />} title="Destroy date" />
-                        <Widget info={<Skeleton theme="text" />} title="Time left until auction is destroyed" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Destroy date" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Time left until auction is destroyed" />
                     </section>
                 }
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="IPFS CID for the information JSON" />
+                    <Widget info={<Skeleton width="200px" theme="text" />} title="IPFS CID for the image" />
+                </section>
             </div>)
             : (<div>
             {isContractDestroyed ?
-            (<div>
+            (<div className="w-4/5 p-4 pl-80">
                 <Hero
+                backgroundURL="https://moralis.io/wp-content/uploads/2021/06/blue-blob-background-2.svg"
                     height="200px"
-                    title='Auction ended!'
+                    //linearGradient="linear-gradient(113.54deg, rgba(103, 58, 194, 0.6) 14.91%, rgba(122, 74, 221, 0.498) 25.92%, rgba(209, 103, 255, 0.03) 55.76%), linear-gradient(160.75deg, #7A4ADD 41.37%, #D57BFF 98.29%)"
+                    title={<p className="text-9xl">Auction ended!</p>}
+                    textColor="#1a1a49"
                 />
             </div>)
             : (<div>
             {(!amISeller && enteredAuction) ?
             (
+                <div className="w-4/5 p-4 pl-96">
                 <Hero
+                    linearGradient="linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(46,46,120,1) 7%, rgba(0,212,255,1) 100%);"
                     height="125px"
+                    textColor="#f1f1ff"
+                    align="center"
                     title={isOpen ? (doIHaveTheHighestBid ? "You're in the lead!" : "You're behind!") : (doIHaveTheHighestBid ? 'You won!' : '')}
                     subTitle={"Your " + (isOpen ? 'current' : 'winning') + ' bid ' + (isOpen ? 'is ' : 'was ') + getEtherOutput(myCurrentBid)}
                 />
+                </div>
             ) : (<div></div>)}
             {(amISeller && !isOpen) ?
             (
+                <div className="w-4/5 p-4 pl-96">
                 <Hero
+                    linearGradient="linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(46,46,120,1) 7%, rgba(0,212,255,1) 100%);"
                     height="125px"
+                    textColor="#f1f1ff"
+                    align="center"
                     title={auctionWinner}
                     subTitle='The winner of the auction'
                 />
+                </div>
             ) : (<div></div>)}
             <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <div className="w-full">
+                        <Accordion
+                            id="accordion"
+                            theme="blue"
+                            title={title}
+                            subTitle="Press for description"
+                        >
+                            <p className="p-2 text-slate-700">{description}</p>
+                        </Accordion>
+                    </div>
+                </section>
+                <section style={{ display: 'flex', gap: '20px' }}>
+                { image && 
+                        (<div className="w-full flex justify-center items-center">
+                            <img
+                                src={image}
+                            />
+                        </div>)
+                    }
+                </section>
                 <section style={{ display: 'flex', gap: '20px' }}>
                     <Widget info={
                         <Typography
@@ -667,6 +757,10 @@ export default function Auction({ contractAddress }) {
                         <Widget info={timeUntilDestroy} title="Time left until auction is destroyed" />
                     </section>
                 }
+                <section style={{ display: 'flex', gap: '20px' }}>
+                    <Widget info={infoCID} title="IPFS CID for the information JSON" />
+                    <Widget info={imageCID} title="IPFS CID for the image" />
+                </section>
             </div>
             {amISeller
                 ? (<div>
@@ -689,7 +783,7 @@ export default function Auction({ contractAddress }) {
                             disabled={closeAuctionIsLoading || closeAuctionIsFetching}
                         />
                     </div>)
-                    : (<div className="pl-44">
+                    : (<div className="pl-44 pb-4">
                         <Button
                             onClick={
                                 async () => {

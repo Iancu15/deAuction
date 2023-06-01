@@ -146,7 +146,7 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
 
     function getTimeUntilThreshold(openIntervalThresholdValue, timePassedSinceStartValue) {
         if (timePassedSinceStartValue >= openIntervalThresholdValue) {
-            return "Seller can close the auction at his/her own discretion"
+            return secondsToHms(0)
         } else {
             return secondsToHms(openIntervalThresholdValue - timePassedSinceStartValue)
         }
@@ -221,7 +221,7 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
 
     async function updateUIVariables() {
         const amISellerValue = currUserAddress.toLowerCase() === sellerAddress.toLowerCase()
-
+        console.log(`curr user: ${currUserAddress}`)
         setCurrentHighestBid((await getCurrentHighestBid()).toString())
         setNumberOfBidders((await getNumberOfBidders()).toString())
         if (!amISellerValue) {
