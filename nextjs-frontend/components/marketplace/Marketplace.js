@@ -6,9 +6,10 @@ import { ethers } from "ethers"
 
 const GET_AUCTIONS = gql`
     {
-        auctionDeployeds(first: 50) {
-            id
-            sellerAddress   
+        auctionEntities(first: 5, where: {state_lte: 1}) {
+        id
+        sellerAddress
+        state
         }
     }
 `
@@ -40,7 +41,7 @@ export default function Marketplace() {
                 loading || !auctions || statesAreLoading ? (
                     <div></div>
                 ) : (
-                    auctions.auctionDeployeds.map((auction) => {
+                    auctions.auctionEntities.map((auction) => {
                         const { id, sellerAddress } = auction
                         return (
                             <AuctionBox

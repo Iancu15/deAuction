@@ -6,7 +6,7 @@ dataSources:
     name: AuctionFactory
     network: sepolia
     source:
-      address: "0x9F18d3ac532cf7840aAAB7a6f70852A56A38290E"
+      address: "0xa4fDA0e7C25a35891aE175682ea82689630A6518"
       abi: AuctionFactory
       startBlock: 3595397
     mapping:

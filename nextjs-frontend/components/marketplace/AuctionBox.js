@@ -276,7 +276,7 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
                         <p class="truncate text-center text-blue-500 font-semibold">{title}</p>
                     </div>
                     { image && 
-                        (<div className="w-56 h-56 flex justify-center items-center">
+                        (<div className="w-56 h-56 overflow-hidden flex justify-center items-center">
                             <img
                                 src={image}
                                 width="200px"
