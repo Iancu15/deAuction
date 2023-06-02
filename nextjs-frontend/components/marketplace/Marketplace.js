@@ -21,12 +21,14 @@ export default function Marketplace() {
     const [statesAreLoading, setStatesAreLoading] = useState(true)
 
     async function updateUserAddress() {
+        console.log('updating user address...')
         setStatesAreLoading(true)
         const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
         await provider.send("eth_requestAccounts", [])
         const signer = provider.getSigner()
         setCurrUserAddress(await signer.getAddress())
         setStatesAreLoading(false)
+        console.log('updating user address...')
     }
 
     useEffect(() => {
@@ -42,7 +44,7 @@ export default function Marketplace() {
                     <div></div>
                 ) : (
                     auctions.auctionEntities.map((auction) => {
-                        const { id, sellerAddress } = auction
+                        const { id, sellerAddress, state } = auction
                         return (
                             <AuctionBox
                                 contractAddress={id}

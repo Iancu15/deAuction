@@ -1,4 +1,5 @@
-import { Modal, Typography, Input, Upload, TextArea, useNotification, TabList, Tab, CodeArea } from "web3uikit"
+import { Modal, Typography, Input, Upload, TextArea, TabList, Tab, CodeArea } from "web3uikit"
+import { useNotification, Bell, Checkmark } from "web3uikit"
 import { useState } from "react"
 import { ethers } from "ethers"
 import axios from 'axios'
@@ -31,7 +32,7 @@ export default function StartAuctionModal({ dismiss }) {
             message: 'Transaction Complete!',
             title: 'Transaction Notification',
             position: "topR",
-            icon: 'checkmark',
+            icon: <Checkmark fontSize={20} />,
         })
     }
 
@@ -41,7 +42,7 @@ export default function StartAuctionModal({ dismiss }) {
             message: message,
             title: title,
             position: "topR",
-            icon: 'bell',
+            icon: <Bell fontSize={20} />,
         })
     }
 

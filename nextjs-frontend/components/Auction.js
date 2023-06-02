@@ -1,7 +1,8 @@
 import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
 import { ethers } from "ethers"
-import { Button, Input, useNotification, Widget, Hero, Skeleton, Typography, Accordion } from "web3uikit"
+import { Button, Input, Widget, Hero, Skeleton, Typography, Accordion } from "web3uikit"
+import { useNotification, Bell, Checkmark } from "web3uikit"
 import axios from 'axios'
 const abi = require("../constants/AuctionAbi.json")
 
@@ -436,9 +437,7 @@ export default function Auction({ contractAddress }) {
                 data: auctionInfo.imageCID
             }
         )).data
-        setImage(URL.createObjectURL(new Blob([fetchedImage], {
-            type: 'image/jpeg'
-          })))
+        setImage(fetchedImage)
     }
 
     async function fetchConstants() {
@@ -537,7 +536,7 @@ export default function Auction({ contractAddress }) {
             message: 'Transaction Complete!',
             title: 'Transaction Notification',
             position: "topR",
-            icon: 'checkmark',
+            icon: <Checkmark fontSize={20} />,
         })
     }
 
@@ -547,7 +546,7 @@ export default function Auction({ contractAddress }) {
             message: message,
             title: title,
             position: "topR",
-            icon: 'bell',
+            icon: <Bell fontSize={20} />,
         })
     }
 
