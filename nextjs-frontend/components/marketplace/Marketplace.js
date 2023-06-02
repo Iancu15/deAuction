@@ -6,7 +6,7 @@ import { ethers } from "ethers"
 
 const GET_AUCTIONS = gql`
     {
-        auctionEntities(first: 5, where: {state_lte: 1}) {
+        auctionEntities(first: 50, where: {state_lte: 1}) {
         id
         sellerAddress
         state

@@ -436,7 +436,9 @@ export default function Auction({ contractAddress }) {
                 data: auctionInfo.imageCID
             }
         )).data
-        setImage(fetchedImage)
+        setImage(URL.createObjectURL(new Blob([fetchedImage], {
+            type: 'image/jpeg'
+          })))
     }
 
     async function fetchConstants() {

@@ -1,4 +1,4 @@
-import { Modal, Typography, Input, Upload, TextArea, useNotification } from "web3uikit"
+import { Modal, Typography, Input, Upload, TextArea, useNotification, TabList, Tab, CodeArea } from "web3uikit"
 import { useState } from "react"
 import { ethers } from "ethers"
 import axios from 'axios'
@@ -15,6 +15,9 @@ export default function StartAuctionModal({ dismiss }) {
     const [titleInput, setTitleInput] = useState("0")
     const [descriptionInput, setDescriptionInput] = useState("0")
     const [image, setImage] = useState(``)
+    const [imageCID, setImageCID] = useState(``)
+    const [jsonCID, setJsonCID] = useState(``)
+    const [tabState, setTabState] = useState(``)
     const inputWidth = "22vw"
 
     function printHex(text) {
@@ -84,9 +87,8 @@ export default function StartAuctionModal({ dismiss }) {
         return provider.getSigner();
     }
 
-
-    async function storeOnIpfs(image) {
-        const imageCID = (await axios.put(
+    async function storeImageOnIpfs(image) {
+        return (await axios.put(
             'http://localhost:3000/api/ipfs/upload/image',
             image,
             {
@@ -96,25 +98,34 @@ export default function StartAuctionModal({ dismiss }) {
             }
         )).data.cid
 
+    }
+
+    async function storeJsonOnIpfs(imageCID) {
         const auctionInfo = {
             title: titleInput,
             description: descriptionInput,
             imageCID: imageCID
         }
 
-        return await axios.put(
+        return (await axios.put(
             'http://localhost:3000/api/ipfs/upload/json',
             {
                 data: JSON.stringify(auctionInfo)
             }
-        )
+        )).data.cid
+    }
+
+    async function storeJsonAndDeployAuction() {
+        const ipfsURI = await storeJsonOnIpfs(imageCID)
+        await deployAuction(ipfsURI)
     }
 
 
     async function storeImageAndDeployAuction() {
         var reader = new FileReader()
         reader.onload = async function(event) {
-            const ipfsURI = (await storeOnIpfs(event.target.result)).data.cid
+            const imageCID = await storeImageOnIpfs(event.target.result)
+            const ipfsURI = await storeJsonOnIpfs(imageCID)
             await deployAuction(ipfsURI)
         }
 
@@ -177,6 +188,24 @@ export default function StartAuctionModal({ dismiss }) {
         return image !== ``
     }
 
+    function checkImageCID() {
+        return imageCID.length >= 32
+    }
+
+    function checkJsonCID() {
+        return jsonCID.length >= 32
+    }
+
+    function checkTab() {
+        if (tabState === 1) {
+            return checkImage() && checkDescription() && checkTitle()
+        } else if (tabState === 2) {
+            return checkDescription() && checkTitle() && checkImageCID()
+        } else {
+            return checkJsonCID()
+        }
+    }
+
     async function onChange(e) {
         if (e != null) {
             setImage(e)
@@ -192,16 +221,18 @@ export default function StartAuctionModal({ dismiss }) {
             onCancel={dismiss}
             onCloseButtonPressed={dismiss}
             onOk={async () => {
-                if (checkImage()) {
-                    if (checkMinumumBid() && checkAuctioneerCollateral() && checkSellerCollateral() &&
-                    checkMaximumNoBidders() && checkInterval() && checkTitle()) {
-                        dismiss()
+                if (checkMinumumBid() && checkAuctioneerCollateral() && checkSellerCollateral() &&
+                checkMaximumNoBidders() && checkInterval() && checkTab()) {
+                    dismiss()
+                    if (tabState === 1) {
                         await storeImageAndDeployAuction()
+                    } else if (tabState === 2) {
+                        await storeJsonAndDeployAuction()
                     } else {
-                        handleErrorNotification("One or more of the submitted inputs doesn't respect its format and conditions.")
+                        await deployAuction(jsonCID)
                     }
                 } else {
-                    handleErrorNotification("Please insert an image.")
+                    handleErrorNotification("One or more of the submitted inputs doesn't respect its format and conditions.")
                 }
             }}
             title={<Typography color="#68738D" variant="h3">Start auction</Typography>}
@@ -211,19 +242,6 @@ export default function StartAuctionModal({ dismiss }) {
                 <div
                     className="py-8 grid grid-cols-1 gap-y-8 pl-10"
                 >
-                    <Input
-                        errorMessage={"Title should be between 10 and 30 characters"}
-                        label="Title"
-                        placeholder="This is my title"
-                        type="text"
-                        onChange={(event) => {
-                            setTitleInput(event.target.value)
-                        }}
-                        state={
-                            checkTitle() ? "confirmed" : "error"
-                        }
-                        width={inputWidth}
-                    />
                     <Input
                         errorMessage={'Please enter a positive number'}
                         label="Minimum bid"
@@ -289,26 +307,169 @@ export default function StartAuctionModal({ dismiss }) {
                         }
                         width={inputWidth}
                     />
-                    <TextArea
-                        label="Description"
-                        name="Test TextArea Default"
-                        onBlur={function noRefCheck(){}}
-                        onChange={(event) => {
-                            setDescriptionInput(event.target.value)
-                        }}
-                        placeholder="Describe your item in between 100 and 10000 characters"
-                        state={
-                            checkDescription() ? "confirmed" : "error"
-                        }
-                        width={inputWidth}
-                    />
                 </div>
-                <Upload
-                    onChange={(event) => {
-                        onChange(event)
-                    }}
-                    theme="withIcon"
-                />
+                <div className="pt-4">
+                    <TabList
+                        defaultActiveKey={1}
+                        onChange={(tabState) => {setTabState(tabState)}}
+                        tabStyle="bar"
+                    >
+                        <Tab
+                            tabKey={1}
+                            tabName="Manual"
+                        >
+                            <div
+                                className="pt-4 pb-8 grid grid-cols-1 gap-y-8 pl-10"
+                            >
+                                <Input
+                                    errorMessage={"Title should be between 10 and 30 characters"}
+                                    label="Title"
+                                    placeholder="This is my title"
+                                    type="text"
+                                    onChange={(event) => {
+                                        setTitleInput(event.target.value)
+                                    }}
+                                    state={
+                                        checkTitle() ? "confirmed" : "error"
+                                    }
+                                    width={inputWidth}
+                                />
+                                <TextArea
+                                    label="Description"
+                                    name="Test TextArea Default"
+                                    onBlur={function noRefCheck(){}}
+                                    onChange={(event) => {
+                                        setDescriptionInput(event.target.value)
+                                    }}
+                                    placeholder="Describe your item in between 100 and 10000 characters"
+                                    state={
+                                        checkDescription() ? "confirmed" : "error"
+                                    }
+                                    width={inputWidth}
+                                />
+                            </div>
+                            <Upload
+                                onChange={(event) => {
+                                    onChange(event)
+                                }}
+                                theme="withIcon"
+                            />
+                        </Tab>
+                        <Tab
+                            tabKey={2}
+                            tabName="w/ IPFS CIDv1 for image"
+                        >
+                            <div
+                                className="pt-4 grid grid-cols-1 gap-y-8 pl-10"
+                            >
+                                <Input
+                                    errorMessage={"Title should be between 10 and 30 characters"}
+                                    label="Title"
+                                    placeholder="This is my title"
+                                    type="text"
+                                    onChange={(event) => {
+                                        setTitleInput(event.target.value)
+                                    }}
+                                    state={
+                                        checkTitle() ? "confirmed" : "error"
+                                    }
+                                    width={inputWidth}
+                                />
+                                <TextArea
+                                    label="Description"
+                                    name="Test TextArea Default"
+                                    onBlur={function noRefCheck(){}}
+                                    onChange={(event) => {
+                                        setDescriptionInput(event.target.value)
+                                    }}
+                                    placeholder="Describe your item in between 100 and 10000 characters"
+                                    state={
+                                        checkDescription() ? "confirmed" : "error"
+                                    }
+                                    width={inputWidth}
+                                />
+                                <div>
+                                    <Typography
+                                        onCopy={function noRefCheck(){}}
+                                        variant="caption14"
+                                    >
+                                        If you have CIDv0 you can convert it to v1 using the command below:
+                                    </Typography>
+                                    <CodeArea
+                                        onBlur={function noRefCheck(){}}
+                                        onChange={function noRefCheck(){}}
+                                        text="ipfs cid format -v 1 -b base32 QmX66hwxdPnt3kXi55HWNUoZbzvt3VSpJDpMjpaxTNvkvt"
+                                    />
+                                </div>
+                                <Input
+                                    errorMessage={"CID should be at least 32 characters long"}
+                                    label="Image CIDv1"
+                                    placeholder="Please insert CIDv1 of image"
+                                    type="text"
+                                    onChange={(event) => {
+                                        setImageCID(event.target.value)
+                                    }}
+                                    state={
+                                        checkImageCID() ? "confirmed" : "error"
+                                    }
+                                    width={inputWidth}
+                                />
+                            </div>
+                        </Tab>
+                        <Tab
+                            tabKey={3}
+                            tabName="Single IPFS CIDv1"
+                        >
+                            <div
+                                className="grid grid-cols-1 gap-y-8 pl-10"
+                            >
+                                <div>
+                                    <Typography
+                                        onCopy={function noRefCheck(){}}
+                                        variant="caption14"
+                                    >
+                                        Below you can see an example of a valid JSON:
+                                    </Typography>
+                                    <CodeArea
+                                        onBlur={function noRefCheck(){}}
+                                        onChange={function noRefCheck(){}}
+                                        text={`{
+        "title":"My Sweet Item",
+        "description":"Item is really rad",
+        "imageCID":"bafybeieb73oyw7dntgetade5llmt6pzlt5yhlzn4h2mdtlh5knekytz5le"
+    }`}
+                                    />
+                                </div>
+                                <div>
+                                    <Typography
+                                        onCopy={function noRefCheck(){}}
+                                        variant="caption14"
+                                    >
+                                        If you have CIDv0 you can convert it to v1 using the command below:
+                                    </Typography>
+                                    <CodeArea
+                                        onBlur={function noRefCheck(){}}
+                                        onChange={function noRefCheck(){}}
+                                        text="ipfs cid format -v 1 -b base32 QmX66hwxdPnt3kXi55HWNUoZbzvt3VSpJDpMjpaxTNvkvt"
+                                    />
+                                </div>
+                                <Input
+                                    errorMessage={"CID should be at least 32 characters long"}
+                                    label="JSON CIDv1"
+                                    placeholder="Please insert CIDv1 of JSON"
+                                    type="text"
+                                    onChange={(event) => {
+                                        setJsonCID(event.target.value)
+                                    }}
+                                    state={
+                                        checkJsonCID() ? "confirmed" : "error"
+                                    }
+                                    width={inputWidth}
+                                />
+                            </div>
+                        </Tab>
+                    </TabList>
+                </div>
             </div>
         </Modal>
     )
