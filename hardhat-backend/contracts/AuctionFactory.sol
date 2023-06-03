@@ -5,7 +5,8 @@ pragma solidity ^0.8.7;
 import "./Auction.sol";
 
 contract AuctionFactory {
-    uint256 private constant OPEN_INTERVAL_THRESHOLD = 24 * 3600;
+    //uint256 private constant OPEN_INTERVAL_THRESHOLD = 24 * 3600;
+    uint256 private constant OPEN_INTERVAL_THRESHOLD = 0;
     uint256 private constant MAXIMUM_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE = 5;
 

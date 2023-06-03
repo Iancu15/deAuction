@@ -51,7 +51,10 @@ contract Auction is AutomationCompatibleInterface {
     );
 
     event AuctionDestroyed(
-        address contractAddres
+        address contractAddres,
+        string infoCID,
+        uint256 timestamp,
+        uint256 status
     );
 
     constructor(
@@ -202,10 +205,6 @@ contract Auction is AutomationCompatibleInterface {
     }
 
     function closeAuction() public onlySeller auctionOpen {
-        if (!canICloseAuction()) {
-            revert Auction__ThresholdNotReached(getTimeUntilThreshold());
-        }
-
         if (s_currentHighestBid == 0) {
             (bool success, ) = payable(i_seller).call{
                 value: i_sellerCollateralAmount
@@ -215,7 +214,12 @@ contract Auction is AutomationCompatibleInterface {
                 revert Auction__TransactionFailed();
             }
 
+            emit AuctionDestroyed(address(this), s_infoCID, block.timestamp, 4);
             destroyContract();
+        }
+
+        if (!canICloseAuction()) {
+            revert Auction__ThresholdNotReached(getTimeUntilThreshold());
         }
 
         s_isOpen = false;
@@ -262,10 +266,12 @@ contract Auction is AutomationCompatibleInterface {
             revert Auction__TransactionFailed();
         }
 
+        emit AuctionDestroyed(address(this), s_infoCID, block.timestamp, 2);
         destroyContract();
     }
 
     function burnAllStoredValue() public auctionClosed onlySeller {
+        emit AuctionDestroyed(address(this), s_infoCID, block.timestamp, 3);
         destroyContract();
     }
 
@@ -293,12 +299,12 @@ contract Auction is AutomationCompatibleInterface {
         if (s_isOpen) {
             closeAuction();
         } else {
+            emit AuctionDestroyed(address(this), s_infoCID, block.timestamp, 5);
             destroyContract();
         }
     }
 
     function destroyContract() internal {
-        emit AuctionDestroyed(address(this));
         selfdestruct(payable(address(this)));
     }
 

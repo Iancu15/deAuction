@@ -10,7 +10,6 @@ const abi = require("../../constants/AuctionAbi.json")
 export default function AuctionBox({ contractAddress, sellerAddress, currUserAddress }) {
     const router = useRouter()
     const { isWeb3Enabled } = useMoralis()
-
     const [statesAreLoading, setStatesAreLoading] = useState(true)
 
     /**
@@ -221,7 +220,6 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
 
     async function updateUIVariables() {
         const amISellerValue = currUserAddress.toLowerCase() === sellerAddress.toLowerCase()
-        console.log(`curr user: ${currUserAddress}`)
         setCurrentHighestBid((await getCurrentHighestBid()).toString())
         setNumberOfBidders((await getNumberOfBidders()).toString())
         if (!amISellerValue) {

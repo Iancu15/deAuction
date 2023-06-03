@@ -4,6 +4,7 @@ import { ethers } from "ethers"
 import { Button, Input, Widget, Hero, Skeleton, Typography, Accordion } from "web3uikit"
 import { useNotification, Bell, Checkmark } from "web3uikit"
 import axios from 'axios'
+import NotConnected from "./illustrations/NotConnected"
 const abi = require("../constants/AuctionAbi.json")
 
 export default function Auction({ contractAddress }) {
@@ -595,332 +596,338 @@ export default function Auction({ contractAddress }) {
 
     return (
         <div>
-            {statesAreLoading ? (
-            <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <div className="w-full">
-                        <Accordion
-                            id="accordion"
-                            theme="blue"
-                            title={<Skeleton width="200px" theme="text" />}
-                            subTitle="Press for description"
-                        >
-                        </Accordion>
-                    </div>
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Contract address" />
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Seller address" />
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Seller collateral amount" />
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Minimum bid" />
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Auctioneer collateral amount" />
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Highest bid currently" />
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Auction status" />
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Contract balance" />
-                    {isOpen ? (<Widget info={<Skeleton width="200px" theme="text" />} title="Number of participants" />)
-                        : (<Widget info={<Skeleton width="200px" theme="text" />} title="Maximum number of participants" />)}
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Start date" />
-                    {isOpen ? (<Widget info={<Skeleton width="200px" theme="text" />} title="Automatic close date" />)
-                        : (<Widget info={<Skeleton width="200px" theme="text" />} title="Date auction closed" />)}
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="Time passed since the start of the auction" />
-                    { isOpen ? <Widget info={<Skeleton theme="text" />} title="Time left until auction automatically closes" />
-                    : <Widget info={<Skeleton width="200px" theme="text" />} title="Time passed since the auction closed" /> }
-                    { isOpen ? <Widget info={<Skeleton width="200px" theme="text" />} title="Time left until seller can close auction" /> 
-                    : <div></div> }
-                </section>
-                { isOpen ? <div></div> :
+            { isWeb3Enabled ?
+            (<div>
+                {statesAreLoading ? (
+                <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
                     <section style={{ display: 'flex', gap: '20px' }}>
-                        <Widget info={<Skeleton width="200px" theme="text" />} title="Destroy date" />
-                        <Widget info={<Skeleton width="200px" theme="text" />} title="Time left until auction is destroyed" />
+                        <div className="w-full">
+                            <Accordion
+                                id="accordion"
+                                theme="blue"
+                                title={<Skeleton width="200px" theme="text" />}
+                                subTitle="Press for description"
+                            >
+                            </Accordion>
+                        </div>
                     </section>
-                }
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="IPFS CID for the information JSON" />
-                    <Widget info={<Skeleton width="200px" theme="text" />} title="IPFS CID for the image" />
-                </section>
-            </div>)
-            : (<div>
-            {isContractDestroyed ?
-            (<div className="w-4/5 p-4 pl-80">
-                <Hero
-                backgroundURL="https://moralis.io/wp-content/uploads/2021/06/blue-blob-background-2.svg"
-                    height="200px"
-                    //linearGradient="linear-gradient(113.54deg, rgba(103, 58, 194, 0.6) 14.91%, rgba(122, 74, 221, 0.498) 25.92%, rgba(209, 103, 255, 0.03) 55.76%), linear-gradient(160.75deg, #7A4ADD 41.37%, #D57BFF 98.29%)"
-                    title={<p className="text-9xl">Auction ended!</p>}
-                    textColor="#1a1a49"
-                />
-            </div>)
-            : (<div>
-            {(!amISeller && enteredAuction) ?
-            (
-                <div className="w-4/5 p-4 pl-96">
-                <Hero
-                    linearGradient="linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(46,46,120,1) 7%, rgba(0,212,255,1) 100%);"
-                    height="125px"
-                    textColor="#f1f1ff"
-                    align="center"
-                    title={isOpen ? (doIHaveTheHighestBid ? "You're in the lead!" : "You're behind!") : (doIHaveTheHighestBid ? 'You won!' : '')}
-                    subTitle={"Your " + (isOpen ? 'current' : 'winning') + ' bid ' + (isOpen ? 'is ' : 'was ') + getEtherOutput(myCurrentBid)}
-                />
-                </div>
-            ) : (<div></div>)}
-            {(amISeller && !isOpen) ?
-            (
-                <div className="w-4/5 p-4 pl-96">
-                <Hero
-                    linearGradient="linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(46,46,120,1) 7%, rgba(0,212,255,1) 100%);"
-                    height="125px"
-                    textColor="#f1f1ff"
-                    align="center"
-                    title={auctionWinner}
-                    subTitle='The winner of the auction'
-                />
-                </div>
-            ) : (<div></div>)}
-            <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <div className="w-full">
-                        <Accordion
-                            id="accordion"
-                            theme="blue"
-                            title={title}
-                            subTitle="Press for description"
-                        >
-                            <p className="p-2 text-slate-700">{description}</p>
-                        </Accordion>
-                    </div>
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                { image && 
-                        (<div className="w-full flex justify-center items-center">
-                            <img
-                                src={image}
-                            />
-                        </div>)
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Contract address" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Seller address" />
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Seller collateral amount" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Minimum bid" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Auctioneer collateral amount" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Highest bid currently" />
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Auction status" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Contract balance" />
+                        {isOpen ? (<Widget info={<Skeleton width="200px" theme="text" />} title="Number of participants" />)
+                            : (<Widget info={<Skeleton width="200px" theme="text" />} title="Maximum number of participants" />)}
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Start date" />
+                        {isOpen ? (<Widget info={<Skeleton width="200px" theme="text" />} title="Automatic close date" />)
+                            : (<Widget info={<Skeleton width="200px" theme="text" />} title="Date auction closed" />)}
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Time passed since the start of the auction" />
+                        { isOpen ? <Widget info={<Skeleton theme="text" />} title="Time left until auction automatically closes" />
+                        : <Widget info={<Skeleton width="200px" theme="text" />} title="Time passed since the auction closed" /> }
+                        { isOpen ? <Widget info={<Skeleton width="200px" theme="text" />} title="Time left until seller can close auction" /> 
+                        : <div></div> }
+                    </section>
+                    { isOpen ? <div></div> :
+                        <section style={{ display: 'flex', gap: '20px' }}>
+                            <Widget info={<Skeleton width="200px" theme="text" />} title="Destroy date" />
+                            <Widget info={<Skeleton width="200px" theme="text" />} title="Time left until auction is destroyed" />
+                        </section>
                     }
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={
-                        <Typography
-                            copyable
-                            onCopy={function noRefCheck(){}}
-                            variant="body18"
-                            color="#000000"
-                        >
-                            {contractAddress}
-                        </Typography>
-                    } title="Contract address" />
-                    <Widget info={<Typography
-                            copyable
-                            onCopy={function noRefCheck(){}}
-                            variant="body18"
-                            color="#000000"
-                        >
-                            {sellerAddress}
-                        </Typography>
-                    } title="Seller address" />
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={getEtherOutput(sellerCollateralAmount)} title="Seller collateral amount" />
-                    <Widget info={getEtherOutput(minimumBid)} title="Minimum bid" />
-                    <Widget info={getEtherOutput(auctioneerCollateralAmount)} title="Auctioneer collateral amount" />
-                    <Widget info={getEtherOutput(currentHighestBid)} title="Highest bid currently" />
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={isOpen ? "Open" : "Closed"} title="Auction status" />
-                    <Widget info={getEtherOutput(contractBalance)} title="Contract balance" />
-                    {isOpen ? (<Widget info={numberOfBidders + "/" + maximumNumberOfBidders} title="Number of participants" />)
-                        : (<Widget info={maximumNumberOfBidders} title="Maximum number of participants" />)}
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={startDate} title="Start date" />
-                    { isOpen ? <Widget info={closeDate} title="Automatic close date" /> :
-                    <Widget info={closeDate} title="Date auction closed" /> }
-                </section>
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={timePassedSinceStart} title="Time passed since the start of the auction" />
-                    { isOpen ? <Widget info={timeUntilClosing} title="Time left until auction automatically closes" />
-                    : <Widget info={timePassedSinceAuctionClosed} title="Time passed since the auction closed" /> }
-                    { isOpen ? <Widget info={timeUntilThreshold} title="Time left until seller can close auction" />
-                    : <div></div> }
-                </section>
-                { isOpen ? <div></div> :
                     <section style={{ display: 'flex', gap: '20px' }}>
-                        <Widget info={destroyDate} title="Destroy date" />
-                        <Widget info={timeUntilDestroy} title="Time left until auction is destroyed" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="IPFS CID for the information JSON" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="IPFS CID for the image" />
                     </section>
-                }
-                <section style={{ display: 'flex', gap: '20px' }}>
-                    <Widget info={infoCID} title="IPFS CID for the information JSON" />
-                    <Widget info={imageCID} title="IPFS CID for the image" />
-                </section>
-            </div>
-            {amISeller
-                ? (<div>
-                    {isOpen ?
-                    (<div className="pl-44 pb-10">
-                        <Button
-                            onClick={
-                                async () => {
-                                    await closeAuction({
-                                        onSuccess: handleSuccess,
-                                        onError: (error) => handleError(error.message)
-                                    })
-                                }
-                            }
-
-                            text="Close auction"
-                            theme="colored"
-                            color="red"
-                            size="large"
-                            disabled={closeAuctionIsLoading || closeAuctionIsFetching}
-                        />
-                    </div>)
-                    : (<div className="pl-44 pb-4">
-                        <Button
-                            onClick={
-                                async () => {
-                                    await burnAllStoredValue({
-                                        onSuccess: handleSuccess,
-                                        onError: (error) => handleError(error.message)
-                                    })
-                                }
-                            }
-
-                            text="Burn all stored value"
-                            theme="colored"
-                            color="red"
-                            size="large"
-                            disabled={burnAllStoredValueBidIsLoading || burnAllStoredValueBidIsFetching}
-                        />
-                    </div>)
-                }
                 </div>)
-            : (<div>{enteredAuction
-                ? (<div> {isOpen ?
-                        (<div className="flex flex-row">
-                            <div className="pl-44">
-                                <Button
-                                    onClick={
-                                        async () => {
-                                            if (doIHaveTheHighestBid) {
-                                                handleErrorNotification("You're the highest bidder therefore you can't withdraw!")
-                                            } else {
-                                                await leaveAuction({
-                                                    onSuccess: handleSuccess,
-                                                    onError: (error) => handleError(error.message)
-                                                })
-                                            }
-                                        }
-                                    }
-                                    
-                                    color="red"
-                                    text="Leave auction"
-                                    theme="colored"
-                                    size="large"
-                                    disabled={leaveAuctionIsLoading || leaveAuctionIsFetching}
+                : (<div>
+                {isContractDestroyed ?
+                (<div className="w-4/5 p-4 pl-80">
+                    <Hero
+                    backgroundURL="https://moralis.io/wp-content/uploads/2021/06/blue-blob-background-2.svg"
+                        height="200px"
+                        //linearGradient="linear-gradient(113.54deg, rgba(103, 58, 194, 0.6) 14.91%, rgba(122, 74, 221, 0.498) 25.92%, rgba(209, 103, 255, 0.03) 55.76%), linear-gradient(160.75deg, #7A4ADD 41.37%, #D57BFF 98.29%)"
+                        title={<p className="text-9xl">Auction ended!</p>}
+                        textColor="#1a1a49"
+                    />
+                </div>)
+                : (<div>
+                {(!amISeller && enteredAuction) ?
+                (
+                    <div className="w-4/5 p-4 pl-96">
+                    <Hero
+                        linearGradient="linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(46,46,120,1) 7%, rgba(0,212,255,1) 100%);"
+                        height="125px"
+                        textColor="#f1f1ff"
+                        align="center"
+                        title={isOpen ? (doIHaveTheHighestBid ? "You're in the lead!" : "You're behind!") : (doIHaveTheHighestBid ? 'You won!' : '')}
+                        subTitle={"Your " + (isOpen ? 'current' : 'winning') + ' bid ' + (isOpen ? 'is ' : 'was ') + getEtherOutput(myCurrentBid)}
+                    />
+                    </div>
+                ) : (<div></div>)}
+                {(amISeller && !isOpen) ?
+                (
+                    <div className="w-4/5 p-4 pl-96">
+                    <Hero
+                        linearGradient="linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(46,46,120,1) 7%, rgba(0,212,255,1) 100%);"
+                        height="125px"
+                        textColor="#f1f1ff"
+                        align="center"
+                        title={auctionWinner}
+                        subTitle='The winner of the auction'
+                    />
+                    </div>
+                ) : (<div></div>)}
+                <div style={{ display: 'grid', gap: '20px', padding: '20px 170px' }}>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <div className="w-full">
+                            <Accordion
+                                id="accordion"
+                                theme="blue"
+                                title={title}
+                                subTitle="Press for description"
+                            >
+                                <p className="p-2 text-slate-700">{description}</p>
+                            </Accordion>
+                        </div>
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                    { image && 
+                            (<div className="w-full flex justify-center items-center">
+                                <img
+                                    src={image}
                                 />
-                            </div>
-                            <div className="ml-auto pr-44">
-                                <Input
-                                    errorMessage={'Addition bid has to be numerical and higher than 0'}
-                                    label="Addition bid"
-                                    placeholder="0"
-                                    type="number"
-                                    onChange={(event) => {
-                                        setInput(event.target.value)
-                                    }}
-
-                                    state={
-                                        (parseFloat(input) > parseFloat('0'))
-                                        ? "confirmed" : "error"
-                                    }
-                                />
-                                <div className="pb-5 pt-7">
-                                    <Button
-                                        onClick={
-                                            async () => {
-                                                await increaseBid()
-                                            }
-                                        }
-
-                                        text="Increase bid"
-                                        theme="colored"
-                                        color="blue"
-                                        size="large"    
-                                        disabled={isLoading}
-                                    />
-                                
-                                </div>
-                            </div>
-                        </div>)
-                        : (<div className="float-right pr-44">
-                            {doIHaveTheHighestBid ? (<div>
+                            </div>)
+                        }
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={
+                            <Typography
+                                copyable
+                                onCopy={function noRefCheck(){}}
+                                variant="body18"
+                                color="#000000"
+                            >
+                                {contractAddress}
+                            </Typography>
+                        } title="Contract address" />
+                        <Widget info={<Typography
+                                copyable
+                                onCopy={function noRefCheck(){}}
+                                variant="body18"
+                                color="#000000"
+                            >
+                                {sellerAddress}
+                            </Typography>
+                        } title="Seller address" />
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={getEtherOutput(sellerCollateralAmount)} title="Seller collateral amount" />
+                        <Widget info={getEtherOutput(minimumBid)} title="Minimum bid" />
+                        <Widget info={getEtherOutput(auctioneerCollateralAmount)} title="Auctioneer collateral amount" />
+                        <Widget info={getEtherOutput(currentHighestBid)} title="Highest bid currently" />
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={isOpen ? "Open" : "Closed"} title="Auction status" />
+                        <Widget info={getEtherOutput(contractBalance)} title="Contract balance" />
+                        {isOpen ? (<Widget info={numberOfBidders + "/" + maximumNumberOfBidders} title="Number of participants" />)
+                            : (<Widget info={maximumNumberOfBidders} title="Maximum number of participants" />)}
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={startDate} title="Start date" />
+                        { isOpen ? <Widget info={closeDate} title="Automatic close date" /> :
+                        <Widget info={closeDate} title="Date auction closed" /> }
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={timePassedSinceStart} title="Time passed since the start of the auction" />
+                        { isOpen ? <Widget info={timeUntilClosing} title="Time left until auction automatically closes" />
+                        : <Widget info={timePassedSinceAuctionClosed} title="Time passed since the auction closed" /> }
+                        { isOpen ? <Widget info={timeUntilThreshold} title="Time left until seller can close auction" />
+                        : <div></div> }
+                    </section>
+                    { isOpen ? <div></div> :
+                        <section style={{ display: 'flex', gap: '20px' }}>
+                            <Widget info={destroyDate} title="Destroy date" />
+                            <Widget info={timeUntilDestroy} title="Time left until auction is destroyed" />
+                        </section>
+                    }
+                    <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={infoCID} title="IPFS CID for the information JSON" />
+                        <Widget info={imageCID} title="IPFS CID for the image" />
+                    </section>
+                </div>
+                {amISeller
+                    ? (<div>
+                        {isOpen ?
+                        (<div className="pl-44 pb-10">
                             <Button
                                 onClick={
                                     async () => {
-                                        await routeHighestBid({
+                                        await closeAuction({
                                             onSuccess: handleSuccess,
                                             onError: (error) => handleError(error.message)
                                         })
                                     }
                                 }
 
-                                text="Route bid"
+                                text="Close auction"
                                 theme="colored"
-                                color="blue"
+                                color="red"
                                 size="large"
-                                disabled={routeHighestBidIsLoading || routeHighestBidIsFetching}
+                                disabled={closeAuctionIsLoading || closeAuctionIsFetching}
                             />
-                            </div>)
-                            : (<div></div>)}
-                        </div>)}
-                    </div>
-                )
-                : (<div>
-                    {isOpen ? (
-                    <div className="float-right pr-44">
-                        <Input
-                            errorMessage={'Bid has to be numerical and higher than ' + ethers.utils.formatUnits(minimumBidPlusCollateral, "ether") + ' ETH'}
-                            label="Starting bid"
-                            placeholder={ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")}
-                            type="number"
-                            onChange={(event) => {
-                                setInput(event.target.value)
-                            }}
-                            state={
-                                (parseFloat(input) >= parseFloat(ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")))
-                                ? "confirmed" : "error"
-                            }
-                        />
-                        <div className="pb-5 pt-7">
+                        </div>)
+                        : (<div className="pl-44 pb-4">
                             <Button
                                 onClick={
                                     async () => {
-                                        await enterAuction()
+                                        await burnAllStoredValue({
+                                            onSuccess: handleSuccess,
+                                            onError: (error) => handleError(error.message)
+                                        })
                                     }
                                 }
 
-                                text="Enter Auction"
+                                text="Burn all stored value"
                                 theme="colored"
-                                color="blue"
-                                disabled={isLoading}
+                                color="red"
+                                size="large"
+                                disabled={burnAllStoredValueBidIsLoading || burnAllStoredValueBidIsFetching}
                             />
-                        </div>
                         </div>)
-                        : (<div></div>)}
+                    }
+                    </div>)
+                : (<div>{enteredAuction
+                    ? (<div> {isOpen ?
+                            (<div className="flex flex-row">
+                                <div className="pl-44">
+                                    <Button
+                                        onClick={
+                                            async () => {
+                                                if (doIHaveTheHighestBid) {
+                                                    handleErrorNotification("You're the highest bidder therefore you can't withdraw!")
+                                                } else {
+                                                    await leaveAuction({
+                                                        onSuccess: handleSuccess,
+                                                        onError: (error) => handleError(error.message)
+                                                    })
+                                                }
+                                            }
+                                        }
+                                        
+                                        color="red"
+                                        text="Leave auction"
+                                        theme="colored"
+                                        size="large"
+                                        disabled={leaveAuctionIsLoading || leaveAuctionIsFetching}
+                                    />
+                                </div>
+                                <div className="ml-auto pr-44">
+                                    <Input
+                                        errorMessage={'Addition bid has to be numerical and higher than 0'}
+                                        label="Addition bid"
+                                        placeholder="0"
+                                        type="number"
+                                        onChange={(event) => {
+                                            setInput(event.target.value)
+                                        }}
+
+                                        state={
+                                            (parseFloat(input) > parseFloat('0'))
+                                            ? "confirmed" : "error"
+                                        }
+                                    />
+                                    <div className="pb-5 pt-7">
+                                        <Button
+                                            onClick={
+                                                async () => {
+                                                    await increaseBid()
+                                                }
+                                            }
+
+                                            text="Increase bid"
+                                            theme="colored"
+                                            color="blue"
+                                            size="large"    
+                                            disabled={isLoading}
+                                        />
+                                    
+                                    </div>
+                                </div>
+                            </div>)
+                            : (<div className="float-right pr-44">
+                                {doIHaveTheHighestBid ? (<div>
+                                <Button
+                                    onClick={
+                                        async () => {
+                                            await routeHighestBid({
+                                                onSuccess: handleSuccess,
+                                                onError: (error) => handleError(error.message)
+                                            })
+                                        }
+                                    }
+
+                                    text="Route bid"
+                                    theme="colored"
+                                    color="blue"
+                                    size="large"
+                                    disabled={routeHighestBidIsLoading || routeHighestBidIsFetching}
+                                />
+                                </div>)
+                                : (<div></div>)}
+                            </div>)}
+                        </div>
+                    )
+                    : (<div>
+                        {isOpen ? (
+                        <div className="float-right pr-44">
+                            <Input
+                                errorMessage={'Bid has to be numerical and higher than ' + ethers.utils.formatUnits(minimumBidPlusCollateral, "ether") + ' ETH'}
+                                label="Starting bid"
+                                placeholder={ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")}
+                                type="number"
+                                onChange={(event) => {
+                                    setInput(event.target.value)
+                                }}
+                                state={
+                                    (parseFloat(input) >= parseFloat(ethers.utils.formatUnits(minimumBidPlusCollateral, "ether")))
+                                    ? "confirmed" : "error"
+                                }
+                            />
+                            <div className="pb-5 pt-7">
+                                <Button
+                                    onClick={
+                                        async () => {
+                                            await enterAuction()
+                                        }
+                                    }
+
+                                    text="Enter Auction"
+                                    theme="colored"
+                                    color="blue"
+                                    disabled={isLoading}
+                                />
+                            </div>
+                            </div>)
+                            : (<div></div>)}
+                    </div>)}
                 </div>)}
-            </div>)}
-            </div>)}
-            </div>)}
+                </div>)}
+                </div>)}
+            </div>)
+            : (
+                <NotConnected />
+            )}
         </div>
     )
 }

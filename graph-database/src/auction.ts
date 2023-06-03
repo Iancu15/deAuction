@@ -9,6 +9,8 @@ export function handleAuctionClosed(event: AuctionClosed): void {
 
 export function handleAuctionDestroyed(event: AuctionDestroyed): void {
     let entity = AuctionEntity.load(event.params.contractAddres)
-    entity!.state = 2
+    entity!.state = parseInt(event.params.status.toString()) as i32
+    entity!.destroyedTimestamp = parseInt(event.params.timestamp.toString()) as i32
+    entity!.infoCID = event.params.infoCID
     entity!.save()
 }

@@ -3,9 +3,10 @@ import { useState, useEffect } from "react"
 import { useMoralis } from "react-moralis"
 import StartAuctionModal from "./StartAuctionModal"
 import Link from 'next/link'
-import Image from 'next/image';
+import { useRouter } from 'next/router'
 
 export default function Header() {
+    const router = useRouter()
     const { isWeb3Enabled } = useMoralis()
     const [showStartAuctionModal, setShowStartAuctionModal] = useState(false)
     const [dismissModal, setDismissModal] = useState(false);
@@ -14,7 +15,7 @@ export default function Header() {
         if (dismissModal) {
             setShowStartAuctionModal(false);
         }
-      }, [dismissModal]);
+    }, [dismissModal])
 
     return (
         <div>
@@ -22,14 +23,29 @@ export default function Header() {
                 <Link href="/"><a><img src="/home_image.png" alt="deAuction" width="150px" height="75px" /></a></Link>
                 <div className="flex ml-auto py-2 px-4">
                     { isWeb3Enabled ?
-                    <Button
-                        text="Start an auction"
-                        theme="primary"
-                        onClick={ () => {
-                            setDismissModal(false)
-                            setShowStartAuctionModal(true)
-                        }}
-                    /> : <div></div> }
+                    <div className="flex ml-auto gap-4">
+                        <Button
+                            text="Your finished auctions"
+                            theme="primary"
+                            onClick={() => router.push(`/your-finished-auctions`)}
+                            disabled={router.pathname == '/your-finished-auctions'}
+                        />
+                        <Button
+                            text="Your ongoing auctions"
+                            theme="primary"
+                            onClick={() => router.push(`/your-ongoing-auctions`)}
+                            disabled={router.pathname == '/your-ongoing-auctions'}
+                        />
+                        <Button
+                            text="Start an auction"
+                            theme="primary"
+                            onClick={ () => {
+                                setDismissModal(false)
+                                setShowStartAuctionModal(true)
+                            }}
+                        />
+                    </div>
+                    : <div></div> }
                     <ConnectButton moralisAuth={false}/>
                 </div>
             </nav>

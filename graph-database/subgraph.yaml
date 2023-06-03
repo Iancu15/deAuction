@@ -6,7 +6,7 @@ dataSources:
     name: AuctionFactory
     network: sepolia
     source:
-      address: "0x373FD5c232BCf58ce9a8898Fdb74bde092C2124A"
+      address: "0x196a53F0BD04bf46420554F29b16B6d75a668747"
       abi: AuctionFactory
       startBlock: 3595397
     mapping:
@@ -41,5 +41,5 @@ templates:
       eventHandlers:
         - event: AuctionClosed(address)
           handler: handleAuctionClosed
-        - event: AuctionDestroyed(address)
+        - event: AuctionDestroyed(address,string,uint256,uint256)
           handler: handleAuctionDestroyed

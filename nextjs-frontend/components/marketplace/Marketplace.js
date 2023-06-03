@@ -1,21 +1,14 @@
-import { useQuery, gql } from "@apollo/client"
+import { useQuery } from "@apollo/client"
 import AuctionBox from "./AuctionBox"
 import { useMoralis } from "react-moralis"
 import { useState, useEffect } from "react"
 import { ethers } from "ethers"
+import Loading from "../illustrations/Loading"
+import NotConnected from "../illustrations/NotConnected"
+import NothingToShow from "../illustrations/NothingToShow"
 
-const GET_AUCTIONS = gql`
-    {
-        auctionEntities(first: 50, where: {state_lte: 1}) {
-        id
-        sellerAddress
-        state
-        }
-    }
-`
-
-export default function Marketplace() {
-    const { loading, error, data: auctions } = useQuery(GET_AUCTIONS)
+export default function Marketplace({ query }) {
+    const { loading, error, data: auctions } = useQuery(query)
     const { isWeb3Enabled } = useMoralis()
     const [currUserAddress, setCurrUserAddress] = useState(``)
     const [statesAreLoading, setStatesAreLoading] = useState(true)
@@ -41,21 +34,29 @@ export default function Marketplace() {
         <div className="flex flex-wrap gap-8 p-8">
             {isWeb3Enabled ? (
                 loading || !auctions || statesAreLoading ? (
-                    <div></div>
+                    <Loading />
                 ) : (
-                    auctions.auctionEntities.map((auction) => {
-                        const { id, sellerAddress, state } = auction
-                        return (
-                            <AuctionBox
-                                contractAddress={id}
-                                sellerAddress={sellerAddress}
-                                currUserAddress={currUserAddress}
-                            />
-                        )
-                    })
+                    <div>
+                        {
+                            auctions.auctionEntities.length > 0 ?
+                            (
+                                auctions.auctionEntities.map((auction) => {
+                                    const { id, sellerAddress } = auction
+                                    return (
+                                        <AuctionBox
+                                            contractAddress={id}
+                                            sellerAddress={sellerAddress}
+                                            currUserAddress={currUserAddress}
+                                        />
+                                    )
+                                })
+                            ) :
+                            (<NothingToShow />)
+                        }
+                    </div>
                 )
             ) : (
-                <div></div>
+                <NotConnected />
             )}
         </div>
     )

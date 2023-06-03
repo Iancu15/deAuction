@@ -1,10 +1,7 @@
-# type AuctionDeployed @entity(immutable: true) {
-#   id: Bytes! # contract address
-#   sellerAddress: Bytes!
-# }
-
 type AuctionEntity @entity {
   id: Bytes! # contract address
   sellerAddress: Bytes!
-  state: Int! # 0 - Open, 1 - Closed, 2 - Destroyed
+  state: Int! # 0 - Open, 1 - Closed, 2 - Ended successfully, 3 - Failed, 4 - Cancelled, 5 - Time up
+  infoCID: String
+  destroyedTimestamp: Int
 }
