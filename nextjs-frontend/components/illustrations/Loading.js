@@ -2,7 +2,7 @@ import { Illustration, Typography } from "web3uikit"
 
 export default function Loading() {
     return (
-        <div className="w-full text-center">
+        <div className="w-full pt-20 text-center">
             <Illustration logo="looking" />
             <div className="pt-4">
                 <Typography

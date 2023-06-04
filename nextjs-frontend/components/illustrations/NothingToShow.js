@@ -3,7 +3,7 @@ import { Illustration, Typography } from "web3uikit"
 export default function NotConnected() {
     return (
         <div className="pl-96">
-            <div className="text-center pl-96">
+            <div className="text-center pt-20 pl-96">
                 <Illustration logo="servers" />
                 <Typography
                     onCopy={function noRefCheck(){}}

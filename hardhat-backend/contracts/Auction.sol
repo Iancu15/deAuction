@@ -46,18 +46,14 @@ contract Auction is AutomationCompatibleInterface {
     uint256 private constant MAXIMUM_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE = 5;
 
-    event AuctionClosed(
-        address contractAddress
-    );
+    event AuctionClosed();
 
     event AuctionCancelled(
-        address contractAddress,
         string infoCID,
         uint256 timestamp
     );
 
     event AuctionSucceeded(
-        address contractAddress,
         string infoCID,
         uint256 timestamp,
         address auctionWinner,
@@ -65,13 +61,20 @@ contract Auction is AutomationCompatibleInterface {
     );
 
     event AuctionFailed(
-        address contractAddress,
         string infoCID,
         uint256 timestamp,
         bool timeOut,
         address auctionWinner,
         uint256 winningBid,
         uint256 sellerCollateral
+    );
+
+    event AuctioneerEnteredAuction(
+        address auctioneerAddress
+    );
+
+    event AuctioneerLeftAuction(
+        address auctioneerAddress
     );
 
     constructor(
@@ -180,6 +183,7 @@ contract Auction is AutomationCompatibleInterface {
 
         s_currentNumberOfBidders++;
         s_auctioneers.push(msg.sender);
+        emit AuctioneerEnteredAuction(msg.sender);
     }
 
     function increaseBid() public payable auctionOpen {
@@ -219,6 +223,8 @@ contract Auction is AutomationCompatibleInterface {
         if (!success) {
             revert Auction__TransactionFailed();
         }
+
+        emit AuctioneerLeftAuction(msg.sender);
     }
 
     function closeAuction() public onlySeller auctionOpen {
@@ -231,7 +237,7 @@ contract Auction is AutomationCompatibleInterface {
                 revert Auction__TransactionFailed();
             }
 
-            emit AuctionCancelled(address(this), s_infoCID, block.timestamp);
+            emit AuctionCancelled(s_infoCID, block.timestamp);
             destroyContract();
         }
 
@@ -259,7 +265,7 @@ contract Auction is AutomationCompatibleInterface {
             }
         }
 
-        emit AuctionClosed(address(this));
+        emit AuctionClosed();
     }
 
     function routeHighestBid() public auctionClosed {
@@ -284,7 +290,6 @@ contract Auction is AutomationCompatibleInterface {
         }
 
         emit AuctionSucceeded(
-            address(this),
             s_infoCID,
             block.timestamp,
             s_currentHighestBidder,
@@ -296,7 +301,6 @@ contract Auction is AutomationCompatibleInterface {
 
     function burnAllStoredValue() public auctionClosed onlySeller {
         emit AuctionFailed(
-            address(this),
             s_infoCID,
             block.timestamp,
             false,
@@ -333,7 +337,6 @@ contract Auction is AutomationCompatibleInterface {
             closeAuction();
         } else {
             emit AuctionFailed(
-                address(this),
                 s_infoCID,
                 block.timestamp,
                 true,

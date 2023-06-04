@@ -6,7 +6,7 @@ dataSources:
     name: AuctionFactory
     network: sepolia
     source:
-      address: "0x396baCb8B5d9D1058A0623ee8fAaEB5dEa201671"
+      address: "0x386e89a8949925D9D50bb44D962cDA5598Fc6973"
       abi: AuctionFactory
       startBlock: 3595397
     mapping:
@@ -39,11 +39,15 @@ templates:
         - name: Auction
           file: Auction/abis/Auction.json
       eventHandlers:
-        - event: AuctionClosed(address)
+        - event: AuctionClosed()
           handler: handleAuctionClosed
-        - event: AuctionCancelled(address,string,uint256)
+        - event: AuctionCancelled(string,uint256)
           handler: handleAuctionCancelled
-        - event: AuctionSucceeded(address,string,uint256,address,uint256)
+        - event: AuctionSucceeded(string,uint256,address,uint256)
           handler: handleAuctionSucceeded
-        - event: AuctionFailed(address,string,uint256,bool,address,uint256,uint256)
+        - event: AuctionFailed(string,uint256,bool,address,uint256,uint256)
           handler: handleAuctionFailed
+        - event: AuctioneerEnteredAuction(address)
+          handler: handleAuctioneerEnteredAuction
+        - event: AuctioneerLeftAuction(address)
+          handler: handleAuctioneerLeftAuction

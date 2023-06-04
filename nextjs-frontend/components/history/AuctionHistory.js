@@ -61,6 +61,14 @@ export default function AuctionHistory({ query }) {
                                             )
                                         })
                                     }
+                                    isColumnSortable = {[
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        true
+                                    ]}
                                     header={[
                                         <span>Id</span>,
                                         <span>Title</span>,
