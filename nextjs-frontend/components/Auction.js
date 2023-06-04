@@ -652,7 +652,7 @@ export default function Auction({ contractAddress }) {
                 </div>)
                 : (<div>
                 {isContractDestroyed ?
-                (<div className="w-4/5 p-4 pl-80">
+                (<div className="w-4/5 pt-4 pl-80">
                     <Hero
                     backgroundURL="https://moralis.io/wp-content/uploads/2021/06/blue-blob-background-2.svg"
                         height="200px"
@@ -664,7 +664,7 @@ export default function Auction({ contractAddress }) {
                 : (<div>
                 {(!amISeller && enteredAuction) ?
                 (
-                    <div className="w-4/5 p-4 pl-96">
+                    <div className="w-4/5 pt-4 pl-96">
                     <Hero
                         linearGradient="linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(46,46,120,1) 7%, rgba(0,212,255,1) 100%);"
                         height="125px"
@@ -677,7 +677,7 @@ export default function Auction({ contractAddress }) {
                 ) : (<div></div>)}
                 {(amISeller && !isOpen) ?
                 (
-                    <div className="w-4/5 p-4 pl-96">
+                    <div className="w-4/5 pt-4 pl-96">
                     <Hero
                         linearGradient="linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(46,46,120,1) 7%, rgba(0,212,255,1) 100%);"
                         height="125px"
@@ -865,7 +865,7 @@ export default function Auction({ contractAddress }) {
                                     </div>
                                 </div>
                             </div>)
-                            : (<div className="float-right pr-44">
+                            : (<div className="float-right pr-44 pb-4">
                                 {doIHaveTheHighestBid ? (<div>
                                 <Button
                                     onClick={

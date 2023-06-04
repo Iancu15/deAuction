@@ -12,6 +12,11 @@ export default function FinishedAuctionsPage() {
                 id
                 sellerAddress
                 state
+                infoCID
+                destroyedTimestamp
+                auctionWinner
+                winningBid
+                sellerCollateral
             }
         }
     `)
@@ -27,6 +32,11 @@ export default function FinishedAuctionsPage() {
                     id
                     sellerAddress
                     state
+                    infoCID
+                    destroyedTimestamp
+                    auctionWinner
+                    winningBid
+                    sellerCollateral
                 }
             }
         `

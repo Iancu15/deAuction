@@ -1,4 +1,4 @@
-import { Card, Skeleton, Typography } from "web3uikit"
+import { Card, Skeleton } from "web3uikit"
 import { useRouter } from 'next/router'
 import React from 'react'
 import { useMoralis, useWeb3Contract } from "react-moralis"

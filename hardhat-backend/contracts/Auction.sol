@@ -47,14 +47,31 @@ contract Auction is AutomationCompatibleInterface {
     uint256 private constant MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE = 5;
 
     event AuctionClosed(
-        address contractAddres
+        address contractAddress
     );
 
-    event AuctionDestroyed(
-        address contractAddres,
+    event AuctionCancelled(
+        address contractAddress,
+        string infoCID,
+        uint256 timestamp
+    );
+
+    event AuctionSucceeded(
+        address contractAddress,
         string infoCID,
         uint256 timestamp,
-        uint256 status
+        address auctionWinner,
+        uint256 winningBid
+    );
+
+    event AuctionFailed(
+        address contractAddress,
+        string infoCID,
+        uint256 timestamp,
+        bool timeOut,
+        address auctionWinner,
+        uint256 winningBid,
+        uint256 sellerCollateral
     );
 
     constructor(
@@ -214,7 +231,7 @@ contract Auction is AutomationCompatibleInterface {
                 revert Auction__TransactionFailed();
             }
 
-            emit AuctionDestroyed(address(this), s_infoCID, block.timestamp, 4);
+            emit AuctionCancelled(address(this), s_infoCID, block.timestamp);
             destroyContract();
         }
 
@@ -266,12 +283,28 @@ contract Auction is AutomationCompatibleInterface {
             revert Auction__TransactionFailed();
         }
 
-        emit AuctionDestroyed(address(this), s_infoCID, block.timestamp, 2);
+        emit AuctionSucceeded(
+            address(this),
+            s_infoCID,
+            block.timestamp,
+            s_currentHighestBidder,
+            s_currentHighestBid
+        );
+
         destroyContract();
     }
 
     function burnAllStoredValue() public auctionClosed onlySeller {
-        emit AuctionDestroyed(address(this), s_infoCID, block.timestamp, 3);
+        emit AuctionFailed(
+            address(this),
+            s_infoCID,
+            block.timestamp,
+            false,
+            s_currentHighestBidder,
+            s_currentHighestBid,
+            i_sellerCollateralAmount
+        );
+
         destroyContract();
     }
 
@@ -299,7 +332,16 @@ contract Auction is AutomationCompatibleInterface {
         if (s_isOpen) {
             closeAuction();
         } else {
-            emit AuctionDestroyed(address(this), s_infoCID, block.timestamp, 5);
+            emit AuctionFailed(
+                address(this),
+                s_infoCID,
+                block.timestamp,
+                true,
+                s_currentHighestBidder,
+                s_currentHighestBid,
+                i_sellerCollateralAmount
+            );
+
             destroyContract();
         }
     }

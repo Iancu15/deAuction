@@ -4,4 +4,7 @@ type AuctionEntity @entity {
   state: Int! # 0 - Open, 1 - Closed, 2 - Ended successfully, 3 - Failed, 4 - Cancelled, 5 - Time up
   infoCID: String
   destroyedTimestamp: Int
+  auctionWinner: Bytes
+  winningBid: BigInt
+  sellerCollateral: BigInt
 }

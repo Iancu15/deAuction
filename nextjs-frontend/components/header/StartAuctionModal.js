@@ -364,7 +364,7 @@ export default function StartAuctionModal({ dismiss }) {
                                 className="pt-4 grid grid-cols-1 gap-y-8 pl-10"
                             >
                                 <Input
-                                    errorMessage={"Title should be between 10 and 30 characters"}
+                                    errorMessage={"Title should be between 10 and 50 characters"}
                                     label="Title"
                                     placeholder="This is my title"
                                     type="text"

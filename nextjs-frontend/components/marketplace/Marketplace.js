@@ -31,12 +31,12 @@ export default function Marketplace({ query }) {
     }, [isWeb3Enabled])
 
     return (
-        <div className="flex flex-wrap gap-8 p-8">
+        <div>
             {isWeb3Enabled ? (
                 loading || !auctions || statesAreLoading ? (
                     <Loading />
                 ) : (
-                    <div>
+                    <div className="flex flex-wrap gap-8 p-8">
                         {
                             auctions.auctionEntities.length > 0 ?
                             (
