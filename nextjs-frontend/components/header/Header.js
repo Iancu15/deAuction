@@ -25,6 +25,12 @@ export default function Header() {
                     { isWeb3Enabled ?
                     <div className="flex ml-auto gap-4">
                         <Button
+                            text="Won auctions"
+                            theme="primary"
+                            onClick={() => router.push(`/won-auctions`)}
+                            disabled={router.pathname == '/won-auctions'}
+                        />
+                        <Button
                             text="Entered auctions"
                             theme="primary"
                             onClick={() => router.push(`/entered-auctions`)}

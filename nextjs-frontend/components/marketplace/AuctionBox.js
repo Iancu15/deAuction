@@ -1,4 +1,4 @@
-import { Card, Skeleton } from "web3uikit"
+import { Card, Skeleton, LockOpen, LockClosed } from "web3uikit"
 import { useRouter } from 'next/router'
 import React from 'react'
 import { useMoralis, useWeb3Contract } from "react-moralis"
@@ -7,7 +7,7 @@ import { ethers } from "ethers"
 import axios from 'axios'
 const abi = require("../../constants/AuctionAbi.json")
 
-export default function AuctionBox({ contractAddress, sellerAddress, currUserAddress }) {
+export default function AuctionBox({ contractAddress, sellerAddress, currUserAddress, state }) {
     const router = useRouter()
     const { isWeb3Enabled } = useMoralis()
     const [statesAreLoading, setStatesAreLoading] = useState(true)
@@ -287,7 +287,7 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
                     </div>
                     <div className="pt-4 text-center italic">
                         <p className="text-cyan-900">{`${getEtherOutput(minimumBid)}/${getEtherOutput(sellerCollateralAmount)}/${getEtherOutput(auctioneerCollateralAmount)}`}</p>
-                        <div className="flex flex-row gap-x-28 px-4 text-cyan-800">
+                        <div className="flex flex-row gap-x-24 px-4 text-cyan-800">
                             {
                                 (myCurrentBid === "-1") ?
                                 <p>{`${getEtherOutput(currentHighestBid)}`}</p> :
@@ -299,6 +299,10 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
                         <div className="flex flex-row gap-x-16 px-4 text-cyan-900">
                             <p>{`${timeUntilThreshold}`}</p>
                             <p>{`${timeUntilClosing}`}</p>
+                        </div>
+                        <div className="flex flex-row gap-x-2 pl-20 text-cyan-900">
+                            <p>{ state === 0 ? "Open" : "Closed" }</p>
+                            { state === 0 ? <LockOpen /> : <LockClosed /> }
                         </div>
                     </div>
                 </div>
@@ -322,6 +326,7 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
                     width="200px"
                     height="100px"
                 />
+                <Skeleton theme="text" />
                 <Skeleton theme="text" />
                 <Skeleton theme="text" />
                 <Skeleton theme="text" />

@@ -7,6 +7,7 @@ type AuctionEntity @entity {
     auctionWinner: Bytes
     winningBid: BigInt
     sellerCollateral: BigInt
+    auctioneerCollateral: BigInt
 }
 
 type AuctionAuctioneerEntity @entity {

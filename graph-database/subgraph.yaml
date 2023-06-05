@@ -6,9 +6,9 @@ dataSources:
     name: AuctionFactory
     network: sepolia
     source:
-      address: "0x386e89a8949925D9D50bb44D962cDA5598Fc6973"
+      address: "0x7b0EecE9e704436eC681899dE27692Cd7d4CD300"
       abi: AuctionFactory
-      startBlock: 3595397
+      startBlock: 3629988
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -45,7 +45,7 @@ templates:
           handler: handleAuctionCancelled
         - event: AuctionSucceeded(string,uint256,address,uint256)
           handler: handleAuctionSucceeded
-        - event: AuctionFailed(string,uint256,bool,address,uint256,uint256)
+        - event: AuctionFailed(string,uint256,bool,address,uint256,uint256,uint256)
           handler: handleAuctionFailed
         - event: AuctioneerEnteredAuction(address)
           handler: handleAuctioneerEnteredAuction

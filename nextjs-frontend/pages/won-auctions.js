@@ -8,7 +8,7 @@ export default function FinishedAuctionsPage() {
     const { isWeb3Enabled } = useMoralis()
     const [query, setQuery] = useState(gql`
         {
-            auctionEntities(first: 50, where: {state_gte: 2, sellerAddress: ""}) {
+            auctionEntities(first: 50, where: {state_gte: 2, auctionWinner: ""}) {
                 id
                 sellerAddress
                 state
@@ -17,6 +17,7 @@ export default function FinishedAuctionsPage() {
                 auctionWinner
                 winningBid
                 sellerCollateral
+                auctioneerCollateral
             }
         }
     `)
@@ -28,14 +29,15 @@ export default function FinishedAuctionsPage() {
         const signerAddress = await signer.getAddress()
         const GET_DESTROYED_AUCTIONS = gql`
             {
-                auctionEntities(first: 50, where: {state_gte: 2, sellerAddress: "${signerAddress}"}) {
+                auctionEntities(first: 50, where: {state_gte: 2, auctionWinner: "${signerAddress}"}) {
                     id
+                    sellerAddress
                     state
                     infoCID
                     destroyedTimestamp
-                    auctionWinner
                     winningBid
                     sellerCollateral
+                    auctioneerCollateral
                 }
             }
         `
@@ -50,7 +52,7 @@ export default function FinishedAuctionsPage() {
 
     return (
         <div>
-            <AuctionHistory query={query} type="finished" />
+            <AuctionHistory query={query} type="won" />
         </div>
     )
 }

@@ -1,4 +1,4 @@
-import Marketplace from "../components/marketplace/Marketplace";
+import AuctionList from "../components/marketplace/AuctionList";
 import { gql } from "@apollo/client"
 import { useState, useEffect } from "react"
 import { useMoralis } from "react-moralis"
@@ -41,7 +41,7 @@ export default function OngoingAuctionsPage() {
 
     return (
         <div>
-            <Marketplace query={query} />
+            <AuctionList query={query} type="ongoing" />
         </div>
     )
 }

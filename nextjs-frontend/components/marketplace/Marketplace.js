@@ -41,12 +41,13 @@ export default function Marketplace({ query }) {
                             auctions.auctionEntities.length > 0 ?
                             (
                                 auctions.auctionEntities.map((auction) => {
-                                    const { id, sellerAddress } = auction
+                                    const { id, sellerAddress, state } = auction
                                     return (
                                         <AuctionBox
                                             contractAddress={id}
                                             sellerAddress={sellerAddress}
                                             currUserAddress={currUserAddress}
+                                            state={state}
                                         />
                                     )
                                 })

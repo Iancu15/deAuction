@@ -1,7 +1,7 @@
 import { ethers } from "ethers"
 import { useEffect, useState } from "react"
 
-export default function HistoryRelevantInfo({ state, winningBid, sellerCollateral }) {
+export default function HistoryRelevantInfo({ state, winningBid, sellerCollateral, auctioneerColateral, type }) {
     const [text, setText] = useState(``)
     const [textColor, setTextColor] = useState(``)
 
@@ -12,18 +12,26 @@ export default function HistoryRelevantInfo({ state, winningBid, sellerCollatera
     async function updateTag() {
         switch(state) {
             case 2:
-                setText(`Earned ${getEtherOutput(winningBid)}`)
+                if (type == "finished") {
+                    setText(`Earned ${getEtherOutput(winningBid)}`)
+                } else {
+                    setText(`Payed ${getEtherOutput(winningBid)}`)
+                }
+
                 setTextColor("text-green-600")
-                break;
-            case 3:
-                setText(`Lost ${getEtherOutput(sellerCollateral)} as collateral and the ${getEtherOutput(winningBid)} bid`)
-                setTextColor("text-red-600")
                 break;
             case 4:
                 setText(``)
                 break;
+            case 3:
             default:
-                setText("Time up")
+                if (type == "finished") {
+                    setText(`Lost ${getEtherOutput(sellerCollateral)} as collateral and the ${getEtherOutput(winningBid)} bid`)
+                } else {
+                    //setText(`Lost the ${getEtherOutput(winningBid)} bid and ${getEtherOutput(auctioneerColateral)} as collateral`)
+                    setText(`Lost the ${getEtherOutput(winningBid)} bid`)
+                }
+
                 setTextColor("text-red-600")
           } 
     }

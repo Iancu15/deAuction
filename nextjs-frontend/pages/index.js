@@ -5,9 +5,9 @@ import { Typography } from "@material-ui/core";
 const GET_AUCTIONS = gql`
     {
         auctionEntities(first: 50, where: {state: 0}) {
-        id
-        sellerAddress
-        state
+            id
+            sellerAddress
+            state
         }
     }
 `
@@ -15,7 +15,7 @@ const GET_AUCTIONS = gql`
 export default function Home() {
     return (
         <div>
-            <Marketplace query={GET_AUCTIONS}/>
+            <Marketplace query={GET_AUCTIONS} />
         </div>
     )
 }

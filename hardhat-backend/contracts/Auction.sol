@@ -66,7 +66,8 @@ contract Auction is AutomationCompatibleInterface {
         bool timeOut,
         address auctionWinner,
         uint256 winningBid,
-        uint256 sellerCollateral
+        uint256 sellerCollateral,
+        uint256 auctioneerCollateral
     );
 
     event AuctioneerEnteredAuction(
@@ -306,7 +307,8 @@ contract Auction is AutomationCompatibleInterface {
             false,
             s_currentHighestBidder,
             s_currentHighestBid,
-            i_sellerCollateralAmount
+            i_sellerCollateralAmount,
+            i_auctioneerCollateralAmount
         );
 
         destroyContract();
@@ -342,7 +344,8 @@ contract Auction is AutomationCompatibleInterface {
                 true,
                 s_currentHighestBidder,
                 s_currentHighestBid,
-                i_sellerCollateralAmount
+                i_sellerCollateralAmount,
+                i_auctioneerCollateralAmount
             );
 
             destroyContract();

@@ -41,6 +41,7 @@ export function handleAuctionFailed(event: AuctionFailed): void {
     entity!.auctionWinner = event.params.auctionWinner
     entity!.winningBid = event.params.winningBid
     entity!.sellerCollateral = event.params.sellerCollateral
+    entity!.auctioneerCollateral = event.params.auctioneerCollateral
     entity!.save()
 }
 

@@ -9,7 +9,7 @@ import StateTag from "./StateTag"
 import HistoryRelevantInfo from "./HistoryRelevantInfo"
 import EllipsisAddress from "./EllipsisAddress"
 
-export default function AuctionHistory({ query }) {
+export default function AuctionHistory({ query, type }) {
     const { loading, error, data: finishedAuctions } = useQuery(query)
     const { isWeb3Enabled } = useMoralis()
 
@@ -29,32 +29,38 @@ export default function AuctionHistory({ query }) {
                             (
                                 <div className="w-full m-auto">
                                 <Table
-                                    columnsConfig="200px 3fr 1fr 1.3fr 5.5fr 100px"
+                                    columnsConfig="200px 3fr 1fr 1.3fr 8fr 100px"
                                     data={
                                         finishedAuctions.auctionEntities.map((auction) => {
                                             const {
                                                 id,
                                                 state,
+                                                sellerAddress,
                                                 infoCID,
                                                 destroyedTimestamp,
                                                 auctionWinner,
                                                 winningBid,
-                                                sellerCollateral
+                                                sellerCollateral,
+                                                auctioneerColateral
                                             } = auction
 
                                             const date = getDate(destroyedTimestamp)
                                             const endDate = date.toLocaleDateString()
-                                            console.log(id)
                                             return (
                                                 [
                                                     <EllipsisAddress address={id} />,
                                                     <IpfsTitle infoCID={infoCID} />,
                                                     <StateTag state={state} />,
-                                                    <EllipsisAddress address={auctionWinner} />,
+                                                    <div>
+                                                        { type === "finished" ? <EllipsisAddress address={auctionWinner} />
+                                                        : <EllipsisAddress address={sellerAddress} /> }
+                                                    </div>,
                                                     <HistoryRelevantInfo
                                                         state={state}
                                                         winningBid={winningBid}
                                                         sellerCollateral={sellerCollateral}
+                                                        auctioneerColateral={auctioneerColateral}
+                                                        type={type}
                                                     />,
                                                     <p>{endDate}</p>
                                                 ]
@@ -73,7 +79,7 @@ export default function AuctionHistory({ query }) {
                                         <span>Id</span>,
                                         <span>Title</span>,
                                         <span>Type</span>,
-                                        <span>Auction winner</span>,
+                                        <span>{ type === "finished" ? "Auction winner" : "Seller address" }</span>,
                                         <span>Relevant info</span>,
                                         <span>End date</span>
                                     ]}
