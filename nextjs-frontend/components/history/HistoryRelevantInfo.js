@@ -1,7 +1,7 @@
 import { ethers } from "ethers"
 import { useEffect, useState } from "react"
 
-export default function HistoryRelevantInfo({ state, winningBid, sellerCollateral, auctioneerColateral, type }) {
+export default function HistoryRelevantInfo({ state, winningBid, sellerCollateral, auctioneerCollateral, type }) {
     const [text, setText] = useState(``)
     const [textColor, setTextColor] = useState(``)
 
@@ -28,8 +28,7 @@ export default function HistoryRelevantInfo({ state, winningBid, sellerCollatera
                 if (type == "finished") {
                     setText(`Lost ${getEtherOutput(sellerCollateral)} as collateral and the ${getEtherOutput(winningBid)} bid`)
                 } else {
-                    //setText(`Lost the ${getEtherOutput(winningBid)} bid and ${getEtherOutput(auctioneerColateral)} as collateral`)
-                    setText(`Lost the ${getEtherOutput(winningBid)} bid`)
+                    setText(`Lost the ${getEtherOutput(winningBid)} bid and ${getEtherOutput(auctioneerCollateral)} as collateral`)
                 }
 
                 setTextColor("text-red-600")

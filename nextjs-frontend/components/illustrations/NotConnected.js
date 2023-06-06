@@ -2,7 +2,7 @@ import { Illustration, Typography } from "web3uikit"
 
 export default function NotConnected() {
     return (
-        <div className="w-full pt-20 text-center">
+        <div className="w-full text-center">
             <Illustration
                 logo="marketplace"
             />

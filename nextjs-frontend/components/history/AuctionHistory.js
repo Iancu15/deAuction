@@ -23,7 +23,7 @@ export default function AuctionHistory({ query, type }) {
                 loading || !finishedAuctions ? (
                     <Loading />
                 ) : (
-                    <div>
+                    <div className="w-full">
                         {
                             finishedAuctions.auctionEntities.length > 0 ?
                             (
@@ -32,16 +32,17 @@ export default function AuctionHistory({ query, type }) {
                                     columnsConfig="200px 3fr 1fr 1.3fr 8fr 100px"
                                     data={
                                         finishedAuctions.auctionEntities.map((auction) => {
+                                            console.log(auction)
                                             const {
                                                 id,
-                                                state,
                                                 sellerAddress,
+                                                state,
                                                 infoCID,
                                                 destroyedTimestamp,
                                                 auctionWinner,
                                                 winningBid,
                                                 sellerCollateral,
-                                                auctioneerColateral
+                                                auctioneerCollateral
                                             } = auction
 
                                             const date = getDate(destroyedTimestamp)
@@ -59,7 +60,7 @@ export default function AuctionHistory({ query, type }) {
                                                         state={state}
                                                         winningBid={winningBid}
                                                         sellerCollateral={sellerCollateral}
-                                                        auctioneerColateral={auctioneerColateral}
+                                                        auctioneerCollateral={auctioneerCollateral}
                                                         type={type}
                                                     />,
                                                     <p>{endDate}</p>

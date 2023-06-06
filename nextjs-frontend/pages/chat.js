@@ -46,26 +46,8 @@ export default function ChatPage() {
                 <div>
                     <div className="w-full flex items-center justify-center p-5">
                         <Input
-                            customize={{
-                                backgroundColor: '#213853',
-                                border: '1px solid #99D3FF',
-                                borderRadius: '16px',
-                                color: '#99D3FF',
-                                fontSize: '16px,',
-                                margin: '20px 0px',
-                                onHover: 'lighten',
-                                padding: '16px 10px'
-                            }}
                             label="Search by Wallet Address"
-                            placeholder="0x..."
-                            setLabelMargin={{
-                                left: '40px'
-                            }}
-                            slots={{
-                                slotBefore: [
-                                    <Search />
-                                ]
-                            }}
+                            placeholder="🔍 | 0x..."
                             onChange={(event) => {
                                 setBuddyAddress(event.target.value.toLowerCase())
                             }}

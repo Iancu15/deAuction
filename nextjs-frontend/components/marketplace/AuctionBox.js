@@ -7,7 +7,7 @@ import { ethers } from "ethers"
 import axios from 'axios'
 const abi = require("../../constants/AuctionAbi.json")
 
-export default function AuctionBox({ contractAddress, sellerAddress, currUserAddress, state }) {
+export default function AuctionBox({ contractAddress, sellerAddress, currUserAddress, state, searchQuery }) {
     const router = useRouter()
     const { isWeb3Enabled } = useMoralis()
     const [statesAreLoading, setStatesAreLoading] = useState(true)
@@ -122,6 +122,32 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
     }
 
     /**
+     * search functionality
+     */
+
+    const [bypassedSearch, setBypassedSearch] = useState(true)
+
+    function checkSearchQuery() {
+        const lowerCaseTitle = title.toLowerCase()
+        const lowerCaseDescription = description.toLowerCase()
+        const keywords = searchQuery.split(/[ ,]+/)
+        for (let i = 0; i < keywords.length; i++) {
+            const keyword = keywords[i]
+            if (!(lowerCaseTitle.includes(keyword) || lowerCaseDescription.includes(keyword))) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    useEffect(() => {
+        if (!statesAreLoading) {
+            setBypassedSearch(checkSearchQuery())
+        }
+    }, [searchQuery])
+
+    /**
      * time functions
      */
 
@@ -213,12 +239,12 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
     }
 
     async function fetchConstants() {
+        await getInfoFromIpfs()
         const auctioneerCollateralAmountValue = await getAuctioneerCollateralAmount()
         setMaximumNumberOfBidders((await getMaximumNumberOfBidders()).toString())
         setMinimumBid((await getMinimumBid()).toString())
         setAuctioneerCollateralAmount(auctioneerCollateralAmountValue.toString())
         setSellerCollateralAmount(await getSellerCollateralAmount())
-        await getInfoFromIpfs()
         setFetchedConstants(true)
     }
 
@@ -258,7 +284,8 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
     return (
         <div className="w-62">
             { !statesAreLoading ?
-            <Card
+            ( bypassedSearch ?
+            (<Card
                 onClick={() => router.push(`/auctions/${contractAddress}`)}
                 tooltipText={
                 <div className="w-96 flex flex-col gap-y-2">
@@ -310,7 +337,7 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
                         </div>
                     </div>
                 </div>
-            </Card>
+            </Card>) : (<div></div>) )
             :
             <Card
                 onClick={() => router.push(`/auctions/${contractAddress}`)}

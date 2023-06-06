@@ -14,7 +14,9 @@ export default function AuctionList({ query, type }) {
         <div>
             {isWeb3Enabled ? (
                 loading || !auctions ? (
-                    <Loading />
+                    <div className="p-8">
+                        <Loading />
+                    </div>
                 ) : (
                     <div className="flex flex-wrap gap-8 p-8">
                         {
@@ -30,6 +32,7 @@ export default function AuctionList({ query, type }) {
                                                 sellerAddress={sellerAddress}
                                                 currUserAddress={auctioneerAddress}
                                                 state={state}
+                                                searchQuery={``}
                                             />
                                         )
                                     })
@@ -45,6 +48,7 @@ export default function AuctionList({ query, type }) {
                                                 sellerAddress={sellerAddress}
                                                 currUserAddress={sellerAddress}
                                                 state={state}
+                                                searchQuery={``}
                                             />
                                         )
                                     })
