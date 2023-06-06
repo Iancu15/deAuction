@@ -1,7 +1,7 @@
 import { Tag } from "web3uikit"
 import { useEffect, useState } from "react"
 
-export default function StateTag({ state }) {
+export default function StateTag({ state, onClick }) {
     const [tagText, setTagText] = useState(``)
     const [tagColor, setTagColor] = useState(``)
 
@@ -30,6 +30,7 @@ export default function StateTag({ state }) {
     }, [])
 
     return (
-        <Tag color={tagColor} text={tagText}/>
+        //<div onClick={onClick()}><Tag color={tagColor} text={tagText} /></div>
+        <Tag color={tagColor} text={tagText} />
     )
 }

@@ -1,9 +1,9 @@
 import { useRouter } from 'next/router'
-import Auction from "../../components/Auction";
+import Auction from "../../components/auction/Auction";
 
 export default function AuctionPage() {
     const router = useRouter()
-    const { address } = router.query 
+    const { address } = router.query
     return (
       <div>
         <Auction

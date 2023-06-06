@@ -4,8 +4,9 @@ import { ethers } from "ethers"
 import { Button, Input, Widget, Hero, Skeleton, Typography, Accordion } from "web3uikit"
 import { useNotification, Bell, Checkmark } from "web3uikit"
 import axios from 'axios'
-import NotConnected from "./illustrations/NotConnected"
-const abi = require("../constants/AuctionAbi.json")
+import NotConnected from "../illustrations/NotConnected"
+import SellerStats from "./SellerStats"
+const abi = require("../../constants/AuctionAbi.json")
 
 export default function Auction({ contractAddress }) {
     const { isWeb3Enabled } = useMoralis()
@@ -455,7 +456,8 @@ export default function Auction({ contractAddress }) {
 
         setMaximumNumberOfBidders((await getMaximumNumberOfBidders()).toString())
         setMinimumBid(minimumBidValue.toString())
-        setSellerAddress(await getSellerAddress())
+        const sellerAddress = await getSellerAddress()
+        setSellerAddress(sellerAddress)
         setAuctioneerCollateralAmount(auctioneerCollateralAmountValue.toString())
         setSellerCollateralAmount(await getSellerCollateralAmount())
         await getInfoFromIpfs()
@@ -570,7 +572,7 @@ export default function Auction({ contractAddress }) {
     const handleError = (errorMessage) => {
         if (errorMessage.includes('web3')) {
             handleWarningNotification("You aren't connected to your wallet! Please connect.")
-        } else if (errorMessage.includes('denied')) {
+        } else if (errorMessage.includes('denied') || errorMessage.includes('user rejected transaction')) {
             handleInfoNotification("Transaction wasn't send.")
         } else {
             handleErrorNotification(errorMessage)
@@ -650,6 +652,12 @@ export default function Auction({ contractAddress }) {
                         </section>
                     }
                     <section style={{ display: 'flex', gap: '20px' }}>
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Seller successes" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Seller failures" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Seller time ups" />
+                        <Widget info={<Skeleton width="200px" theme="text" />} title="Failure(+ time ups) percentage" />
+                    </section>
+                    <section style={{ display: 'flex', gap: '20px' }}>
                         <Widget info={<Skeleton width="200px" theme="text" />} title="IPFS CID for the information JSON" />
                         <Widget info={<Skeleton width="200px" theme="text" />} title="IPFS CID for the image" />
                     </section>
@@ -658,9 +666,8 @@ export default function Auction({ contractAddress }) {
                 {isContractDestroyed ?
                 (<div className="w-4/5 pt-4 pl-80">
                     <Hero
-                    backgroundURL="https://moralis.io/wp-content/uploads/2021/06/blue-blob-background-2.svg"
+                        backgroundURL="https://moralis.io/wp-content/uploads/2021/06/blue-blob-background-2.svg"
                         height="200px"
-                        //linearGradient="linear-gradient(113.54deg, rgba(103, 58, 194, 0.6) 14.91%, rgba(122, 74, 221, 0.498) 25.92%, rgba(209, 103, 255, 0.03) 55.76%), linear-gradient(160.75deg, #7A4ADD 41.37%, #D57BFF 98.29%)"
                         title={<p className="text-9xl">Auction ended!</p>}
                         textColor="#1a1a49"
                     />
@@ -765,6 +772,7 @@ export default function Auction({ contractAddress }) {
                             <Widget info={timeUntilDestroy} title="Time left until auction is destroyed" />
                         </section>
                     }
+                    <SellerStats sellerAddress={sellerAddress} />
                     <section style={{ display: 'flex', gap: '20px' }}>
                         <Widget info={infoCID} title="IPFS CID for the information JSON" />
                         <Widget info={imageCID} title="IPFS CID for the image" />

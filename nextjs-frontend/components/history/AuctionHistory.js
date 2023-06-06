@@ -8,10 +8,12 @@ import IpfsTitle from "./IpfsTitle.js"
 import StateTag from "./StateTag"
 import HistoryRelevantInfo from "./HistoryRelevantInfo"
 import EllipsisAddress from "./EllipsisAddress"
+import { useState } from "react"
 
 export default function AuctionHistory({ query, type }) {
     const { loading, error, data: finishedAuctions } = useQuery(query)
     const { isWeb3Enabled } = useMoralis()
+    const [filterState, setFilterState] = useState(-1)
 
     function getDate(secondsSinceEpoch) {
         return new Date(secondsSinceEpoch * 1000)
@@ -51,7 +53,13 @@ export default function AuctionHistory({ query, type }) {
                                                 [
                                                     <EllipsisAddress address={id} />,
                                                     <IpfsTitle infoCID={infoCID} />,
-                                                    <StateTag state={state} />,
+                                                    <StateTag state={state} onClick={() => {
+                                                        if (filterState === state) {
+                                                            setFilterState(-1)
+                                                        } else {
+                                                            setFilterState(state)
+                                                        }
+                                                    }}/>,
                                                     <div>
                                                         { type === "finished" ? <EllipsisAddress address={auctionWinner} />
                                                         : <EllipsisAddress address={sellerAddress} /> }
