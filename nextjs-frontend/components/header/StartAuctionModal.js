@@ -101,10 +101,11 @@ export default function StartAuctionModal({ dismiss }) {
 
     }
 
-    async function storeJsonOnIpfs(imageCID) {
+    async function storeJsonOnIpfs(imageCID, imageHost) {
         const auctionInfo = {
             title: titleInput,
             description: descriptionInput,
+            imageHost: imageHost,
             imageCID: imageCID
         }
 
@@ -117,7 +118,7 @@ export default function StartAuctionModal({ dismiss }) {
     }
 
     async function storeJsonAndDeployAuction() {
-        const ipfsURI = await storeJsonOnIpfs(imageCID)
+        const ipfsURI = await storeJsonOnIpfs(imageCID, "seller")
         await deployAuction(ipfsURI)
     }
 
@@ -126,7 +127,7 @@ export default function StartAuctionModal({ dismiss }) {
         var reader = new FileReader()
         reader.onload = async function(event) {
             const imageCID = await storeImageOnIpfs(event.target.result)
-            const ipfsURI = await storeJsonOnIpfs(imageCID)
+            const ipfsURI = await storeJsonOnIpfs(imageCID, "server")
             await deployAuction(ipfsURI)
         }
 
@@ -358,7 +359,7 @@ export default function StartAuctionModal({ dismiss }) {
                         </Tab>
                         <Tab
                             tabKey={2}
-                            tabName="w/ IPFS CIDv1 for image"
+                            tabName="Image IPFS CIDv1"
                         >
                             <div
                                 className="pt-4 grid grid-cols-1 gap-y-8 pl-10"
@@ -419,7 +420,7 @@ export default function StartAuctionModal({ dismiss }) {
                         </Tab>
                         <Tab
                             tabKey={3}
-                            tabName="Single IPFS CIDv1"
+                            tabName="JSON IPFS CIDv1"
                         >
                             <div
                                 className="grid grid-cols-1 gap-y-8 pl-10"
@@ -437,6 +438,7 @@ export default function StartAuctionModal({ dismiss }) {
                                         text={`{
         "title":"My Sweet Item",
         "description":"Item is really rad",
+        "imageHost":"seller",
         "imageCID":"bafybeieb73oyw7dntgetade5llmt6pzlt5yhlzn4h2mdtlh5knekytz5le"
     }`}
                                     />

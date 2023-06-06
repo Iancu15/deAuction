@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useMoralis } from "react-moralis"
 import { ethers } from "ethers"
 
-export default function FinishedAuctionsPage() {
+export default function WonAuctionsPage() {
     const { isWeb3Enabled } = useMoralis()
     const [query, setQuery] = useState(gql`
         {

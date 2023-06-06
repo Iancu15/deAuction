@@ -108,13 +108,17 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
 
         setTitle(auctionInfo.title)
         setDescription(auctionInfo.description)
-        const fetchedImage = (await axios.put(
-            'http://localhost:3000/api/ipfs/cat/image',
-            {
-                data: auctionInfo.imageCID
-            }
-        )).data
-        setImage(fetchedImage)
+        if (auctionInfo.imageHost == "server") {
+            const fetchedImage = (await axios.put(
+                'http://localhost:3000/api/ipfs/cat/image',
+                {
+                    data: auctionInfo.imageCID
+                }
+            )).data
+            setImage(fetchedImage)
+        } else {
+            setImage("https://ipfs.io/ipfs/" + auctionInfo.imageCID)
+        }
     }
 
     /**
