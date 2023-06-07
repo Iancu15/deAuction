@@ -574,6 +574,8 @@ export default function Auction({ contractAddress }) {
             handleWarningNotification("You aren't connected to your wallet! Please connect.")
         } else if (errorMessage.includes('denied') || errorMessage.includes('user rejected transaction')) {
             handleInfoNotification("Transaction wasn't send.")
+        } else if (errorMessage == "Internal JSON-RPC error.") {
+            handleInfoNotification("There's not enough money in your wallet.")
         } else {
             handleErrorNotification(errorMessage)
         }
