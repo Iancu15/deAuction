@@ -1,5 +1,4 @@
 import { create } from 'ipfs-http-client'
-const sharp = require('sharp')
 
 async function uploadToIpfs(content) {
     const client =  create({ host: 'localhost', port: '5001', protocol: 'http' })

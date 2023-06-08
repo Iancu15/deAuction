@@ -7,7 +7,20 @@ import { ethers } from "ethers"
 import axios from 'axios'
 const abi = require("../../constants/AuctionAbi.json")
 
-export default function AuctionBox({ contractAddress, sellerAddress, currUserAddress, state, searchQuery }) {
+export default function AuctionBox({
+    contractAddress,
+    sellerAddress,
+    currUserAddress,
+    state,
+    searchQuery = ``,
+    stateFilterId = 'all',
+    showOnlyFreeAuctions = false,
+    showOnlyAuctionsBelowThreshold = false,
+    minValueMinimumBid,
+    maxValueMinimumBid,
+    checkSellerCollateral,
+    checkAuctioneerCollateral
+}) {
     const router = useRouter()
     const { isWeb3Enabled } = useMoralis()
     const [statesAreLoading, setStatesAreLoading] = useState(true)
@@ -122,10 +135,10 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
     }
 
     /**
-     * search functionality
+     * filter functionality
      */
 
-    const [bypassedSearch, setBypassedSearch] = useState(true)
+    const [showAuctionBox, setShowAuctionBox] = useState(true)
 
     function checkSearchQuery() {
         const lowerCaseTitle = title.toLowerCase()
@@ -141,11 +154,51 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
         return true
     }
 
+    function checkInterval(minValue, maxValue, value) {
+        if (minValue === "" || maxValue === "") {
+            return true
+        }
+
+        const floatValue = parseFloat(value)
+        return parseFloat(minValue) <= floatValue && floatValue <= parseFloat(maxValue)
+    }
+
+    function checkStateFilter() {
+        return stateFilterId == 'all' || (stateFilterId == 'open' && state === 0) ||
+            (stateFilterId == 'closed' && state === 1)
+    }
+
+    function checkShowOnlyFreeAuctions() {
+        if (!showOnlyFreeAuctions) {
+            return true
+        }
+
+        return numberOfBidders < maximumNumberOfBidders
+    }
+
+    function checkShowOnlyAuctionsBelowThreshold() {
+        console.log(showOnlyAuctionsBelowThreshold)
+        if (showOnlyAuctionsBelowThreshold.valueOf()) {
+            console.log('hello')
+            return timeUntilThreshold !== secondsToHms(0)
+        }
+
+        return true
+    }
+
     useEffect(() => {
         if (!statesAreLoading) {
-            setBypassedSearch(checkSearchQuery())
+            if (checkSearchQuery() && //checkInterval(minValueMinimumBid, maxValueMinimumBid, minimumBid) &&
+                //checkSellerCollateral(sellerCollateralAmount) && checkAuctioneerCollateral(auctioneerCollateralAmount) &&
+                checkShowOnlyFreeAuctions() && checkShowOnlyAuctionsBelowThreshold() &&
+                checkStateFilter()
+            ) {
+                setShowAuctionBox(true)
+            } else {
+                setShowAuctionBox(false)
+            }
         }
-    }, [searchQuery])
+    }, [searchQuery, minValueMinimumBid, maxValueMinimumBid, stateFilterId, showOnlyAuctionsBelowThreshold, showOnlyFreeAuctions])
 
     /**
      * time functions
@@ -185,6 +238,20 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
      * time getters
      */
 
+    const { runContractFunction: getCloseTimestamp } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getCloseTimestamp",
+        params: {},
+    })
+
+    const { runContractFunction: getClosedInterval } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getClosedInterval",
+        params: {},
+    })
+
     const { runContractFunction: getStartTimestamp } = useWeb3Contract({
         abi: abi,
         contractAddress: contractAddress,
@@ -211,31 +278,50 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
      */
     const [timeUntilClosing, setTimeUntilClosing] = useState("0")
     const [timeUntilThreshold, setTimeUntilThreshold] = useState("0")
+    const [timeUntilDestroy, setTimeUntilDestroy] = useState("0")
     const [startTimestamp, setStartTimestamp] = useState(0)
     const [interval, setInterval] = useState(0)
     const [openIntervalThreshold, setOpenIntervalThreshold] = useState(0)
+    const [closedInterval, setClosedInterval] = useState(0)
+    const [closeTimestamp, setCloseTimestamp] = useState(0)
 
     async function fetchTimeConstants() {
         setStartTimestamp(await getStartTimestamp())
         setInterval(await getInterval())
-        setOpenIntervalThreshold(await getOpenThreshold())
+        if (state === 0) {
+            setOpenIntervalThreshold(await getOpenThreshold())
+        } else {
+            const closedIntervalValue = await getClosedInterval()
+            setClosedInterval(closedIntervalValue)
+            const closeTimestampValue = await getCloseTimestamp()
+            setCloseTimestamp(closeTimestampValue)
+        }
     }
 
     async function updateTimeUI() {
-        let startTimestampValue, intervalValue, openIntervalThresholdValue
+        let startTimestampValue, intervalValue, openIntervalThresholdValue, closedIntervalValue, closeTimestampValue
         if (fetchedConstants) {
             startTimestampValue = startTimestamp
             intervalValue = interval
             openIntervalThresholdValue = openIntervalThreshold
+            closeTimestampValue = closeTimestamp
+            closedIntervalValue = closedInterval
         } else {
             startTimestampValue = (await getStartTimestamp()).toNumber()
-            intervalValue = (await getInterval()).toNumber()
-            openIntervalThresholdValue = (await getOpenThreshold()).toNumber()
+            if (state === 0) {
+                intervalValue = (await getInterval()).toNumber()
+                openIntervalThresholdValue = (await getOpenThreshold()).toNumber()
+            } else {
+                closedIntervalValue = (await getClosedInterval()).toNumber()
+                closeTimestampValue = (await getCloseTimestamp()).toNumber()
+            }
         }
 
         const timePassedSinceStartValue = getTimePassedSince(startTimestampValue)
         setTimeUntilThreshold(getTimeUntilThreshold(openIntervalThresholdValue, timePassedSinceStartValue))
         setTimeUntilClosing(secondsToHms(getTimeLeftUntil(intervalValue, timePassedSinceStartValue)))
+        const timePassedSinceAuctionClosedValue = getTimePassedSince(closeTimestampValue)
+        setTimeUntilDestroy(secondsToHms(getTimeLeftUntil(closedIntervalValue, timePassedSinceAuctionClosedValue)))
     }
 
     async function fetchConstants() {
@@ -284,8 +370,12 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
     return (
         <div className="w-62">
             { !statesAreLoading ?
-            ( bypassedSearch ?
+            ( showAuctionBox ?
             (<Card
+                style={{
+                    borderRight: '1px solid #1E90FF',
+                    borderLeft: '1px solid #1E90FF'
+                }}
                 onClick={() => router.push(`/auctions/${contractAddress}`)}
                 tooltipText={
                 <div className="w-96 flex flex-col gap-y-2">
@@ -296,8 +386,11 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
                         <p>The current highest bid (if you are the seller)</p>
                     </div>
                     <p>Number of bidders/Maximum number of bidders</p>
-                    <p>Time until the seller can close auction</p>
-                    <p>Time until auction automatically closes</p>
+                    <p>Time until the seller can close auction (if it's open)</p>
+                    <div>
+                        <p>Time until auction automatically closes OR</p>
+                        <p>Time until auction is automatically destroyed (if it's closed)</p>
+                    </div>
                 </div>}
             >
                 <div className="w-56">
@@ -328,8 +421,8 @@ export default function AuctionBox({ contractAddress, sellerAddress, currUserAdd
                             <p>{`${numberOfBidders}/${maximumNumberOfBidders}`}</p>
                         </div>
                         <div className="flex flex-row gap-x-16 px-4 text-cyan-900">
-                            <p>{`${timeUntilThreshold}`}</p>
-                            <p>{`${timeUntilClosing}`}</p>
+                            <p>{`${state === 0 ? timeUntilThreshold : ""}`}</p>
+                            <p>{`${state === 0 ? timeUntilClosing : timeUntilDestroy}`}</p>
                         </div>
                         <div className="flex flex-row gap-x-2 pl-20 text-cyan-900">
                             <p>{ state === 0 ? "Open" : "Closed" }</p>

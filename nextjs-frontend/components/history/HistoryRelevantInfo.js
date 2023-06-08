@@ -9,7 +9,7 @@ export default function HistoryRelevantInfo({ state, winningBid, sellerCollatera
         return ethers.utils.formatUnits(amount, "ether") + " ETH"
     }
 
-    async function updateTag() {
+    async function updateInfo() {
         switch(state) {
             case 2:
                 if (type == "finished") {
@@ -36,7 +36,7 @@ export default function HistoryRelevantInfo({ state, winningBid, sellerCollatera
     }
 
     useEffect(() => {
-        updateTag()
+        updateInfo()
     }, [])
 
     return (

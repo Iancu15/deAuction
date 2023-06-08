@@ -34,7 +34,10 @@ export default function AuctionHistory({ query, type }) {
                                     columnsConfig="200px 3fr 1fr 1.3fr 8fr 100px"
                                     data={
                                         finishedAuctions.auctionEntities.map((auction) => {
-                                            console.log(auction)
+                                            if (auction.state !== filterState && filterState !== -1) {
+                                                return ([])
+                                            }
+
                                             const {
                                                 id,
                                                 sellerAddress,

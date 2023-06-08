@@ -1,5 +1,6 @@
 import { Tag } from "web3uikit"
 import { useEffect, useState } from "react"
+import { Button } from "@material-ui/core"
 
 export default function StateTag({ state, onClick }) {
     const [tagText, setTagText] = useState(``)
@@ -30,7 +31,8 @@ export default function StateTag({ state, onClick }) {
     }, [])
 
     return (
-        //<div onClick={onClick()}><Tag color={tagColor} text={tagText} /></div>
-        <Tag color={tagColor} text={tagText} />
+        <Button onClick={() => onClick()}>
+            <Tag color={tagColor} text={tagText} />
+        </Button>
     )
 }
