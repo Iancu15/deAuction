@@ -40,8 +40,8 @@ contract Auction is AutomationCompatibleInterface {
     uint256 private immutable i_sellerCollateralAmount;
     uint256 private immutable i_interval;
     uint256 private immutable i_startTimestamp;
-    //uint256 private constant OPEN_INTERVAL_THRESHOLD = 24 * 3600;
-    uint256 private constant OPEN_INTERVAL_THRESHOLD = 0;
+    uint256 private constant OPEN_INTERVAL_THRESHOLD = 24 * 3600;
+    //uint256 private constant OPEN_INTERVAL_THRESHOLD = 0;
     uint256 private constant CLOSED_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE = 5;

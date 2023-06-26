@@ -72,6 +72,7 @@ export default function StartAuctionModal({ dismiss }) {
         try {
             await tx.wait(1)
             handleSuccessNotification(tx)
+            window.location.reload(true)
         } catch (error) {
             console.log(error)
         }
@@ -175,7 +176,7 @@ export default function StartAuctionModal({ dismiss }) {
     }
 
     function checkInterval() {
-        return Number(intervalInput) >= 24
+        return Number(intervalInput) >= 24 && Number(intervalInput) <= 24 * 7
     }
 
     function checkTitle() {
@@ -297,7 +298,7 @@ export default function StartAuctionModal({ dismiss }) {
                         width={inputWidth}
                     />
                     <Input
-                        errorMessage={'The interval has to be bigger or equal to 24h'}
+                        errorMessage={'The interval has to be between 24h and 168h'}
                         label="Interval before automatic closing (hours)"
                         placeholder="24"
                         type="number"

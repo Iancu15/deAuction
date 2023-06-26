@@ -1,4 +1,4 @@
-import { Input, TextArea, useNotification, Bell, Checkmark } from "web3uikit"
+import { Input, TextArea, useNotification, Bell, Checkmark, Information } from "web3uikit"
 import { useState, useEffect, useRef } from "react"
 import { useMoralis } from "react-moralis"
 import { ethers } from "ethers"
@@ -199,6 +199,14 @@ export default function ChatPage() {
                         checkBuddyAddress() ?
                         ( statesAreLoading ? (<Loading />) : (
                             (<div ref={containerRef} className="flex flex-col gap-8 p-4">
+                                <Information
+                                    information="The chat is public, anyone including you can see
+                                    any message using Etherscan by searching the hash of the transaction.
+                                    As such it's recommended to only use the chat to exchange
+                                    usernames of another third party application that provides
+                                    end-to-end encryption (e.g. Signal, Telegram, WhatsApp)."
+                                    topic={<p className="text-red-600">Disclaimer</p>}
+                                />
                                 {
                                     myTransactionHistory.map((tx) => {
                                         const date = getDate(tx.timestamp)

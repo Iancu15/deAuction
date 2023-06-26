@@ -211,7 +211,12 @@ export default function AuctionBox({
         var m = Math.floor(d % 3600 / 60);
         var s = Math.floor(d % 3600 % 60);
     
-        return ('0' + h).slice(-2) + ":" + ('0' + m).slice(-2) + ":" + ('0' + s).slice(-2);
+        var hour = ('0' + h).slice(-3)
+        if (hour[0] == '0') {
+            hour = ('0' + h).slice(-2)
+        }
+        
+        return hour + ":" + ('0' + m).slice(-2) + ":" + ('0' + s).slice(-2);
     }
 
     function timeNow() {
@@ -223,7 +228,8 @@ export default function AuctionBox({
     }
 
     function getTimeLeftUntil(intervalValue, timePassedSince) {
-        return intervalValue - timePassedSince
+        const timeLeftUntilValue = intervalValue - timePassedSince
+        return (timeLeftUntilValue > 0) ? timeLeftUntilValue : 0
     }
 
     function getTimeUntilThreshold(openIntervalThresholdValue, timePassedSinceStartValue) {

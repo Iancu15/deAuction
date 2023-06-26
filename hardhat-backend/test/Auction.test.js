@@ -82,7 +82,7 @@ async function equal(a, b) {
     beforeEach(async () => {
         accounts = await ethers.getSigners()
         auctioneer1 = accounts[1]
-        seller = (await getNamedAccounts()).seller
+        seller = (await getNamedAccounts()).deployer
         await deployments.fixture(["all"])
         auction = await ethers.getContract("Auction", seller)
     })
@@ -340,7 +340,8 @@ async function equal(a, b) {
             )
         })
 
-        it("fails when threshold timestamp wasn't reached", async () => {
+        it("fails when threshold timestamp wasn't reached and there are bidders", async () => {
+            await auctioneer1EnterAuction()
             await expect(auction.closeAuction()).to.be.revertedWithCustomError(
                 auction,
                 "Auction__ThresholdNotReached"

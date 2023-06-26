@@ -8,6 +8,7 @@ require("hardhat-deploy")
 const SEPOLIA_RPC_URL =
     process.env.SEPOLIA_RPC_URL || "https://eth-sepolia.g.alchemy.com/v2/YOUR-API-KEY"
 const PRIVATE_KEYS = process.env.PRIVATE_KEYS.split("|") || []
+const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY || ""
 
 const COMPILER_SETTINGS = {
     optimizer: {
@@ -65,6 +66,8 @@ module.exports = {
         enabled: true,
         currency: "USD",
         outputFile: "gas-report.txt",
-        noColors: true
+        noColors: true,
+        coinmarketcap: COINMARKETCAP_API_KEY,
+        token: "MATIC"
     }
 };

@@ -100,6 +100,17 @@ export default function Auction({ contractAddress }) {
     })
 
     const {
+        runContractFunction: performUpkeep,
+        isLoading: performUpkeepIsLoading,
+        isFetching: performUpkeepIsFetching
+    } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "leaveAuction",
+        params: {},
+    })
+
+    const {
         runContractFunction: closeAuction,
         isLoading: closeAuctionIsLoading,
         isFetching: closeAuctionIsFetching
@@ -302,7 +313,8 @@ export default function Auction({ contractAddress }) {
     }
 
     function getTimeLeftUntil(intervalValue, timePassedSince) {
-        return intervalValue - timePassedSince
+        const timeLeftUntilValue = intervalValue - timePassedSince
+        return (timeLeftUntilValue > 0) ? timeLeftUntilValue : 0
     }
 
     function getFinishDate(timestampValue, intervalValue) {
@@ -349,7 +361,12 @@ export default function Auction({ contractAddress }) {
         var m = Math.floor(d % 3600 / 60);
         var s = Math.floor(d % 3600 % 60);
     
-        return ('0' + h).slice(-2) + ":" + ('0' + m).slice(-2) + ":" + ('0' + s).slice(-2);
+        var hour = ('0' + h).slice(-3)
+        if (hour[0] == '0') {
+            hour = ('0' + h).slice(-2)
+        }
+        
+        return hour + ":" + ('0' + m).slice(-2) + ":" + ('0' + s).slice(-2);
     }
 
     function timeNow() {
@@ -822,9 +839,10 @@ export default function Auction({ contractAddress }) {
                     }
                     </div>)
                 : (<div>{enteredAuction
-                    ? (<div> {isOpen ?
+                    ? (<div> 
+                        {isOpen ?
                             (<div className="flex flex-row">
-                                <div className="pl-44">
+                                <div className="flex flex-col pl-44 gap-4">
                                     <Button
                                         onClick={
                                             async () => {
@@ -844,6 +862,22 @@ export default function Auction({ contractAddress }) {
                                         theme="colored"
                                         size="large"
                                         disabled={leaveAuctionIsLoading || leaveAuctionIsFetching}
+                                    />
+                                    <Button
+                                        onClick={
+                                            async () => {
+                                                await performUpkeep({
+                                                    onSuccess: handleSuccess,
+                                                    onError: (error) => handleError(error.message)
+                                                })
+                                            }
+                                        }
+
+                                        text="Perform upkeep"
+                                        theme="colored"
+                                        color="red"
+                                        size="large"
+                                        disabled={performUpkeepIsLoading || performUpkeepIsFetching}
                                     />
                                 </div>
                                 <div className="ml-auto pr-44">
