@@ -21,6 +21,10 @@ export default function Marketplace({ query }) {
     const [maxValueSellerCollateral, setMaxValueSellerCollateral] = useState("")
     const [minValueAuctioneerCollateral, setMinValueAuctioneerCollateral] = useState("")
     const [maxValueAuctioneerCollateral, setMaxValueAuctioneerCollateral] = useState("")
+    const [minCurrentHighestBid, setMinCurrentHighestBid] = useState("")
+    const [maxCurrentHighestBid, setMaxCurrentHighestBid] = useState("")
+    const [minTimeUntilClosingHours, setMinTimeUntilClosingHours] = useState("")
+    const [maxTimeUntilClosingHours, setMaxTimeUntilClosingHours] = useState("")
     const [showOnlyFreeAuctions, setShowOnlyFreeAuctions] = useState(false)
     const [showOnlyAuctionsBelowThreshold, setShowOnlyAuctionsBelowThreshold] = useState(false)
 
@@ -40,27 +44,6 @@ export default function Marketplace({ query }) {
             updateUserAddress()
         }
     }, [isWeb3Enabled])
-
-    function checkInterval(minValue, maxValue, value) {
-        if (minValue === "0" && maxValue === "0") {
-            return true
-        }
-
-        const floatValue = parseFloat(value)
-        return parseFloat(minValue) <= floatValue && floatValue <= parseFloat(maxValue)
-    }
-
-    function checkMinimumBidInterval(value) {
-        return checkInterval(minValueMinimumBid, maxValueMinimumBid, value)
-    }
-
-    function checkSellerCollateralInterval(value) {
-        return checkInterval(minValueSellerCollateral, maxValueSellerCollateral, value)
-    }
-
-    function checkAuctioneerCollateralInterval(value) {
-        return checkInterval(minValueAuctioneerCollateral, maxValueAuctioneerCollateral, value)
-    }
 
     return (
         <div>
@@ -107,13 +90,13 @@ export default function Marketplace({ query }) {
                                     <div className="flex flex-row gap-52">
                                         <IntervalFilter
                                             label="current highest bid"
-                                            setMinValue={(value) => setMinValueMinimumBid(value)}
-                                            setMaxValue={(value) => setMaxValueMinimumBid(value)}
+                                            setMinValue={(value) => setMinCurrentHighestBid(value)}
+                                            setMaxValue={(value) => setMaxCurrentHighestBid(value)}
                                         />
                                         <IntervalFilter
-                                            label="time until closing (hours)"
-                                            setMinValue={(value) => setMinValueMinimumBid(value)}
-                                            setMaxValue={(value) => setMaxValueMinimumBid(value)}
+                                            label="time until closing (HH)"
+                                            setMinValue={(value) => setMinTimeUntilClosingHours(value)}
+                                            setMaxValue={(value) => setMaxTimeUntilClosingHours(value)}
                                         />
                                         <div className="flex flex-row px-8">
                                             <Checkbox
@@ -150,9 +133,15 @@ export default function Marketplace({ query }) {
                                                 showOnlyFreeAuctions={showOnlyFreeAuctions}
                                                 showOnlyAuctionsBelowThreshold={showOnlyAuctionsBelowThreshold}
                                                 minValueMinimumBid={minValueMinimumBid}
-                                                maxValueMinimumBid={minValueMinimumBid}
-                                                checkSellerCollateral={checkSellerCollateralInterval}
-                                                checkAuctioneerCollateral={checkAuctioneerCollateralInterval}
+                                                maxValueMinimumBid={maxValueMinimumBid}
+                                                minValueSellerCollateral={minValueSellerCollateral}
+                                                maxValueSellerCollateral={maxValueSellerCollateral}
+                                                minValueAuctioneerCollateral={minValueAuctioneerCollateral}
+                                                maxValueAuctioneerCollateral={maxValueAuctioneerCollateral}
+                                                minCurrentHighestBid={minCurrentHighestBid}
+                                                maxCurrentHighestBid={maxCurrentHighestBid}
+                                                minTimeUntilClosingHours={minTimeUntilClosingHours}
+                                                maxTimeUntilClosingHours={maxTimeUntilClosingHours}
                                             />
                                         )
                                     })

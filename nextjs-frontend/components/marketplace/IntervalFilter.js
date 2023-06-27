@@ -2,16 +2,18 @@ import { useState } from "react"
 import { Input } from "web3uikit"
 
 export default function IntervalFilter({ label, setMinValue, setMaxValue }) {
-    const [minValueInput, setMinValueInput] = useState("0")
-    const [maxValueInput, setMaxValueInput] = useState("0")
+    const [minValueInput, setMinValueInput] = useState("")
+    const [maxValueInput, setMaxValueInput] = useState("")
     const inputWidth = "5vw"
+    const zero = parseFloat("0")
 
     function checkMinValue() {
-        return parseFloat(minValueInput) >= parseFloat("0") && parseFloat(minValueInput) <= parseFloat(maxValueInput)
+        const minValueFloat = parseFloat(minValueInput)
+        return minValueInput === "" || (minValueFloat >= zero && (maxValueInput === "" || minValueFloat <= parseFloat(maxValueInput)))
     }
-
+    
     function checkMaxValue() {
-        return parseFloat(maxValueInput) >= parseFloat("0")
+        return maxValueInput === "" || parseFloat(maxValueInput) >= zero
     }
 
     return (
@@ -19,7 +21,7 @@ export default function IntervalFilter({ label, setMinValue, setMaxValue }) {
             <Input
                 errorMessage={'Bigger than max or negative'}
                 label={`Min ${label}`}
-                placeholder="0"
+                placeholder=""
                 type="number"
                 onChange={(event) => {
                     setMinValueInput(event.target.value)
@@ -35,7 +37,7 @@ export default function IntervalFilter({ label, setMinValue, setMaxValue }) {
             <Input
                 errorMessage={'Negative or contains letters'}
                 label={`Max ${label}`}
-                placeholder="0"
+                placeholder=""
                 type="number"
                 onChange={(event) => {
                     setMaxValueInput(event.target.value)

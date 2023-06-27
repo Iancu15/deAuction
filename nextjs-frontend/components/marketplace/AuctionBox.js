@@ -16,10 +16,16 @@ export default function AuctionBox({
     stateFilterId = 'all',
     showOnlyFreeAuctions = false,
     showOnlyAuctionsBelowThreshold = false,
-    minValueMinimumBid,
-    maxValueMinimumBid,
-    checkSellerCollateral,
-    checkAuctioneerCollateral
+    minValueMinimumBid = "",
+    maxValueMinimumBid = "",
+    minValueSellerCollateral = "",
+    maxValueSellerCollateral = "",
+    minValueAuctioneerCollateral = "",
+    maxValueAuctioneerCollateral = "",
+    minCurrentHighestBid = "",
+    maxCurrentHighestBid = "",
+    minTimeUntilClosingHours = "",
+    maxTimeUntilClosingHours = ""
 }) {
     const router = useRouter()
     const { isWeb3Enabled } = useMoralis()
@@ -155,12 +161,41 @@ export default function AuctionBox({
     }
 
     function checkInterval(minValue, maxValue, value) {
-        if (minValue === "" || maxValue === "") {
+        if (minValue === "" && maxValue === "") {
             return true
         }
 
         const floatValue = parseFloat(value)
-        return parseFloat(minValue) <= floatValue && floatValue <= parseFloat(maxValue)
+        const maxValueFloat = (maxValue === "") ? 0 : parseFloat(ethers.utils.parseEther(maxValue))
+        if (minValue === "") {
+            return floatValue <= maxValueFloat
+        }
+
+        const minValueFloat = (minValue === "") ? 0 : parseFloat(ethers.utils.parseEther(minValue))
+        if (maxValue === "") {
+            return minValueFloat <= floatValue
+        }
+
+        return minValueFloat <= floatValue && floatValue <= maxValueFloat
+    }
+
+    function checkIntervalTime(minValue, maxValue, value) {
+        if (minValue === "" && maxValue === "") {
+            return true
+        }
+
+        const floatValue = parseFloat(value)
+        const maxValueFloat = (maxValue === "") ? 0 : parseFloat(maxValue)
+        if (minValue === "") {
+            return floatValue <= maxValueFloat
+        }
+
+        const minValueFloat = (minValue === "") ? 0 : parseFloat(minValue)
+        if (maxValue === "") {
+            return minValueFloat <= floatValue
+        }
+
+        return minValueFloat <= floatValue && floatValue <= maxValueFloat
     }
 
     function checkStateFilter() {
@@ -169,17 +204,15 @@ export default function AuctionBox({
     }
 
     function checkShowOnlyFreeAuctions() {
-        if (!showOnlyFreeAuctions) {
-            return true
+        if (showOnlyFreeAuctions === 'false') {
+            return numberOfBidders < maximumNumberOfBidders
         }
 
-        return numberOfBidders < maximumNumberOfBidders
+        return true
     }
 
     function checkShowOnlyAuctionsBelowThreshold() {
-        console.log(showOnlyAuctionsBelowThreshold)
-        if (showOnlyAuctionsBelowThreshold.valueOf()) {
-            console.log('hello')
+        if (showOnlyAuctionsBelowThreshold === 'false') {
             return timeUntilThreshold !== secondsToHms(0)
         }
 
@@ -188,8 +221,11 @@ export default function AuctionBox({
 
     useEffect(() => {
         if (!statesAreLoading) {
-            if (checkSearchQuery() && //checkInterval(minValueMinimumBid, maxValueMinimumBid, minimumBid) &&
-                //checkSellerCollateral(sellerCollateralAmount) && checkAuctioneerCollateral(auctioneerCollateralAmount) &&
+            if (checkSearchQuery() && checkInterval(minValueMinimumBid, maxValueMinimumBid, minimumBid) &&
+                checkInterval(minValueSellerCollateral, maxValueSellerCollateral, sellerCollateralAmount) &&
+                checkInterval(minValueAuctioneerCollateral, maxValueAuctioneerCollateral, auctioneerCollateralAmount) &&
+                checkInterval(minCurrentHighestBid, maxCurrentHighestBid, currentHighestBid) &&
+                checkIntervalTime(minTimeUntilClosingHours, maxTimeUntilClosingHours, timeUntilClosing) &&
                 checkShowOnlyFreeAuctions() && checkShowOnlyAuctionsBelowThreshold() &&
                 checkStateFilter()
             ) {
@@ -198,7 +234,10 @@ export default function AuctionBox({
                 setShowAuctionBox(false)
             }
         }
-    }, [searchQuery, minValueMinimumBid, maxValueMinimumBid, stateFilterId, showOnlyAuctionsBelowThreshold, showOnlyFreeAuctions])
+    }, [searchQuery, showOnlyFreeAuctions, showOnlyAuctionsBelowThreshold,
+        minValueMinimumBid, maxValueMinimumBid, minValueSellerCollateral, maxValueSellerCollateral,
+        minValueAuctioneerCollateral, maxValueAuctioneerCollateral, minCurrentHighestBid,
+        maxCurrentHighestBid, minTimeUntilClosingHours, maxTimeUntilClosingHours])
 
     /**
      * time functions
