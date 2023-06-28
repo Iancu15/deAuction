@@ -106,8 +106,8 @@ export default function Auction({ contractAddress }) {
     } = useWeb3Contract({
         abi: abi,
         contractAddress: contractAddress,
-        functionName: "leaveAuction",
-        params: {},
+        functionName: "performUpkeep",
+        params: {calldata: ethers.constants.HashZero},
     })
 
     const {
@@ -519,21 +519,24 @@ export default function Auction({ contractAddress }) {
 
     async function updateUI(minimalUpdate = false) {
         console.log('updating UI...')
-        const isContractDestroyedValue = await wasContractDestroyed()
-        setIsContractDestroyed(isContractDestroyedValue)
-        if (!isContractDestroyedValue) {
-            setStatesAreLoading(true)
-            if (!fetchedConstants) {
-                await fetchTimeConstants()
-                await fetchConstants()
-                console.log('fetched constants')
-            }
+        try {
+            const isContractDestroyedValue = await wasContractDestroyed()
+            setIsContractDestroyed(isContractDestroyedValue)
+            if (!isContractDestroyedValue) {
+                setStatesAreLoading(true)
+                if (!fetchedConstants) {
+                    await fetchTimeConstants()
+                    await fetchConstants()
+                    console.log('fetched constants')
+                }
 
-            const isOpenValue = await updateUIVariables(minimalUpdate)
-            await updateTimeUI(isOpenValue)
-            setStatesAreLoading(false)
-            console.log('updated UI')
-        } else {
+                const isOpenValue = await updateUIVariables(minimalUpdate)
+                await updateTimeUI(isOpenValue)
+                console.log('updated UI')
+            }
+        } catch (e) {
+            console.log(e.message)
+        } finally {
             setStatesAreLoading(false)
         }
     }
@@ -913,24 +916,45 @@ export default function Auction({ contractAddress }) {
                                     </div>
                                 </div>
                             </div>)
-                            : (<div className="float-right pr-44 pb-4">
-                                {doIHaveTheHighestBid ? (<div>
-                                <Button
-                                    onClick={
-                                        async () => {
-                                            await routeHighestBid({
-                                                onSuccess: handleSuccess,
-                                                onError: (error) => handleError(error.message)
-                                            })
-                                        }
-                                    }
+                            : (<div>
+                                {doIHaveTheHighestBid ? (
+                                <div className="flex flex-row pb-4">
+                                    <div className="pl-44">
+                                        <Button
+                                            onClick={
+                                                async () => {
+                                                    await performUpkeep({
+                                                        onSuccess: handleSuccess,
+                                                        onError: (error) => handleError(error.message)
+                                                    })
+                                                }
+                                            }
 
-                                    text="Route bid"
-                                    theme="colored"
-                                    color="blue"
-                                    size="large"
-                                    disabled={routeHighestBidIsLoading || routeHighestBidIsFetching}
-                                />
+                                            text="Perform upkeep"
+                                            theme="colored"
+                                            color="red"
+                                            size="large"
+                                            disabled={performUpkeepIsLoading || performUpkeepIsFetching}
+                                        />
+                                    </div>
+                                    <div className="ml-auto pr-36">
+                                        <Button
+                                            onClick={
+                                                async () => {
+                                                    await routeHighestBid({
+                                                        onSuccess: handleSuccess,
+                                                        onError: (error) => handleError(error.message)
+                                                    })
+                                                }
+                                            }
+
+                                            text="Route bid"
+                                            theme="colored"
+                                            color="blue"
+                                            size="large"
+                                            disabled={routeHighestBidIsLoading || routeHighestBidIsFetching}
+                                        />
+                                    </div>
                                 </div>)
                                 : (<div></div>)}
                             </div>)}

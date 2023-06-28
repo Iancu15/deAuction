@@ -199,6 +199,7 @@ export default function AuctionBox({
     }
 
     function checkStateFilter() {
+        console.log(stateFilterId)
         return stateFilterId == 'all' || (stateFilterId == 'open' && state === 0) ||
             (stateFilterId == 'closed' && state === 1)
     }
@@ -237,7 +238,7 @@ export default function AuctionBox({
     }, [searchQuery, showOnlyFreeAuctions, showOnlyAuctionsBelowThreshold,
         minValueMinimumBid, maxValueMinimumBid, minValueSellerCollateral, maxValueSellerCollateral,
         minValueAuctioneerCollateral, maxValueAuctioneerCollateral, minCurrentHighestBid,
-        maxCurrentHighestBid, minTimeUntilClosingHours, maxTimeUntilClosingHours])
+        maxCurrentHighestBid, minTimeUntilClosingHours, maxTimeUntilClosingHours, stateFilterId])
 
     /**
      * time functions

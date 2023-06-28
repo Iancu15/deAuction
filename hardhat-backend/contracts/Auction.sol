@@ -24,7 +24,8 @@ error Auction__IntervalAboveMaximum(uint256 interval, uint256 maxInterval);
 error Auction__AlreadyEnteredAuction();
 error Auction__MaximumNumberOfBiddersTooLow(uint256 yourValue, uint256 minimumExpectedValue);
 
-contract Auction is AutomationCompatibleInterface {
+//contract Auction is AutomationCompatibleInterface {
+contract Auction {
     mapping(address => uint256) private s_auctioneerToCurrentBid;
     address[] private s_auctioneers;
     address private s_currentHighestBidder;
@@ -40,8 +41,8 @@ contract Auction is AutomationCompatibleInterface {
     uint256 private immutable i_sellerCollateralAmount;
     uint256 private immutable i_interval;
     uint256 private immutable i_startTimestamp;
-    uint256 private constant OPEN_INTERVAL_THRESHOLD = 24 * 3600;
-    //uint256 private constant OPEN_INTERVAL_THRESHOLD = 0;
+    //uint256 private constant OPEN_INTERVAL_THRESHOLD = 24 * 3600;
+    uint256 private constant OPEN_INTERVAL_THRESHOLD = 0;
     uint256 private constant CLOSED_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_INTERVAL = 7 * 24 * 3600;
     uint256 private constant MAXIMUM_NUMBER_OF_BIDDERS_MIN_VALUE = 5;
@@ -317,7 +318,7 @@ contract Auction is AutomationCompatibleInterface {
     function checkUpkeep(bytes memory)
         public
         view
-        override
+        //override
         returns (bool upkeepNeeded, bytes memory)
     {
         if (s_isOpen) {
@@ -329,7 +330,8 @@ contract Auction is AutomationCompatibleInterface {
         return (upkeepNeeded, "0x0");
     }
 
-    function performUpkeep(bytes calldata) external override {
+    //function performUpkeep(bytes calldata) public override {
+    function performUpkeep() public {
         (bool upkeepNeeded, ) = checkUpkeep("");
         if (!upkeepNeeded) {
             revert Auction__UpkeepNotNeeded();
