@@ -1,8 +1,8 @@
 {
   "sepolia": {
     "AuctionFactory": {
-      "address": "0x7b53b5A669A7e7FEE7e3Dd32fAd8b0295BA5d569",
-      "startBlock": 3629988
+      "address": "0x967820FDE84B5A1aB25a1C3F8238aB5352746E82",
+      "startBlock": 3797282
     }
   }
 }

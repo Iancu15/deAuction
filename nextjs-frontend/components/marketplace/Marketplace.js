@@ -54,7 +54,7 @@ export default function Marketplace({ query }) {
                     </div>
                 ) : (
                     <div className="flex flex-col">
-                        <div className="flex flex-row p-8 fixed gap-8">
+                        <div className="flex flex-row p-8 gap-8">
                             <Input
                                 label="Search"
                                 placeholder="🔍 | Keywords separated by space"
@@ -117,7 +117,7 @@ export default function Marketplace({ query }) {
                             </Accordion>
                             </div>
                         </div>
-                        <div className="flex flex-wrap pl-8 pr-8 pb-8 pt-28">
+                        <div className="flex flex-wrap pl-8 pr-8 pb-8">
                             {
                                 auctions.auctionEntities.length > 0 ?
                                 (

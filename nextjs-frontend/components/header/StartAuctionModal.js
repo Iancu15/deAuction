@@ -11,10 +11,10 @@ export default function StartAuctionModal({ dismiss }) {
     const [minimumBidInput, setMinimumBidInput] = useState("0")
     const [auctioneerCollateralAmountInput, setAuctioneerCollateralAmountInput] = useState("0")
     const [sellerCollateralAmountInput, setSellerCollateralAmountInput] = useState("0")
-    const [maximumNumberOfBiddersInput, setMaximumNumberOfBiddersInput] = useState("0")
+    const [maximumNumberOfBiddersInput, setMaximumNumberOfBiddersInput] = useState("5")
     const [intervalInput, setIntervalInput] = useState("0")
-    const [titleInput, setTitleInput] = useState("0")
-    const [descriptionInput, setDescriptionInput] = useState("0")
+    const [titleInput, setTitleInput] = useState("")
+    const [descriptionInput, setDescriptionInput] = useState("")
     const [image, setImage] = useState(``)
     const [imageCID, setImageCID] = useState(``)
     const [jsonCID, setJsonCID] = useState(``)
@@ -176,15 +176,17 @@ export default function StartAuctionModal({ dismiss }) {
     }
 
     function checkInterval() {
-        return Number(intervalInput) >= 24 && Number(intervalInput) <= 24 * 7
+        return Number(intervalInput) <= 24 * 7 //&& Number(intervalInput) >= 24
     }
 
     function checkTitle() {
-        return titleInput.length <= 50 && titleInput.length >= 2 // 10
+        const trimmedTitle = titleInput.trim()
+        return trimmedTitle.length <= 50 && trimmedTitle.length >= 10
     }
 
     function checkDescription() {
-        return descriptionInput.length <= 10000 && descriptionInput.length >= 2 // 100
+        const trimmedDescription = descriptionInput.trim()
+        return trimmedDescription.length <= 10000 && trimmedDescription.length >= 100
     }
 
     function checkImage() {

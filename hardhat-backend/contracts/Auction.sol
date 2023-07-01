@@ -247,6 +247,10 @@ contract Auction {
             revert Auction__ThresholdNotReached(getTimeUntilThreshold());
         }
 
+        closeAuctionInternal();
+    }
+
+    function closeAuctionInternal() internal {
         s_isOpen = false;
         s_closeTimestamp = block.timestamp;
         address[] memory auctioneers = s_auctioneers;
@@ -315,11 +319,8 @@ contract Auction {
         destroyContract();
     }
 
-    function checkUpkeep(bytes memory)
-        public
-        view
-        //override
-        returns (bool upkeepNeeded, bytes memory)
+    // override
+    function checkUpkeep(bytes memory) public view returns (bool upkeepNeeded, bytes memory)
     {
         if (s_isOpen) {
             upkeepNeeded = getTimePassedSinceStart() >= i_interval;
@@ -338,7 +339,7 @@ contract Auction {
         }
 
         if (s_isOpen) {
-            closeAuction();
+            closeAuctionInternal();
         } else {
             emit AuctionFailed(
                 s_infoCID,

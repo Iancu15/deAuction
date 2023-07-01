@@ -107,7 +107,25 @@ export default function Auction({ contractAddress }) {
         abi: abi,
         contractAddress: contractAddress,
         functionName: "performUpkeep",
-        params: {calldata: ethers.constants.HashZero},
+        params: {},
+    })
+
+    const {
+        runContractFunction: getTimePassedSinceStart,
+    } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getTimePassedSinceStart",
+        params: {},
+    })
+
+    const {
+        runContractFunction: getTimePassedSinceAuctionClosed,
+    } = useWeb3Contract({
+        abi: abi,
+        contractAddress: contractAddress,
+        functionName: "getTimePassedSinceAuctionClosed",
+        params: {},
     })
 
     const {
@@ -869,10 +887,16 @@ export default function Auction({ contractAddress }) {
                                     <Button
                                         onClick={
                                             async () => {
-                                                await performUpkeep({
-                                                    onSuccess: handleSuccess,
-                                                    onError: (error) => handleError(error.message)
-                                                })
+                                                const timePassedSinceStartFloat = parseFloat(await getTimePassedSinceStart())
+                                                const intervalFloat = parseFloat(interval)
+                                                if (timePassedSinceStartFloat >= intervalFloat) {
+                                                    await performUpkeep({
+                                                        onSuccess: handleSuccess,
+                                                        onError: (error) => handleError(error.message)
+                                                    })
+                                                } else {
+                                                    handleErrorNotification('Upkeep not needed!')
+                                                }
                                             }
                                         }
 
@@ -923,10 +947,16 @@ export default function Auction({ contractAddress }) {
                                         <Button
                                             onClick={
                                                 async () => {
-                                                    await performUpkeep({
-                                                        onSuccess: handleSuccess,
-                                                        onError: (error) => handleError(error.message)
-                                                    })
+                                                    const timePassedSinceAuctionClosedFloat = parseFloat(await getTimePassedSinceAuctionClosed())
+                                                    const closedIntervalFloat = parseFloat(closedInterval)
+                                                    if (timePassedSinceAuctionClosedFloat >= closedIntervalFloat) {
+                                                        await performUpkeep({
+                                                            onSuccess: handleSuccess,
+                                                            onError: (error) => handleError(error.message)
+                                                        })
+                                                    } else {
+                                                        handleErrorNotification('Upkeep not needed!')
+                                                    }
                                                 }
                                             }
 

@@ -371,7 +371,12 @@ export default function AuctionBox({
     }
 
     async function fetchConstants() {
-        await getInfoFromIpfs()
+        try {
+            await getInfoFromIpfs()
+        } catch (error) {
+            console.log(error)
+        }
+        
         const auctioneerCollateralAmountValue = await getAuctioneerCollateralAmount()
         setMaximumNumberOfBidders((await getMaximumNumberOfBidders()).toString())
         setMinimumBid((await getMinimumBid()).toString())
@@ -457,19 +462,26 @@ export default function AuctionBox({
                     </div>
                     <div className="pt-4 text-center italic">
                         <p className="text-cyan-900">{`${getEtherOutput(minimumBid)}/${getEtherOutput(sellerCollateralAmount)}/${getEtherOutput(auctioneerCollateralAmount)}`}</p>
-                        <div className="flex flex-row gap-x-24 px-4 text-cyan-800">
+                        <div className="flex flex-row text-cyan-800">
                             {
                                 (myCurrentBid === "-1") ?
                                 <p>{`${getEtherOutput(currentHighestBid)}`}</p> :
                                 <p>{`${getEtherOutput(myCurrentBid)}/${getEtherOutput(currentHighestBid)}`}</p>
                             }
 
-                            <p>{`${numberOfBidders}/${maximumNumberOfBidders}`}</p>
+                            <p className="ml-auto">{`${numberOfBidders}/${maximumNumberOfBidders}`}</p>
                         </div>
-                        <div className="flex flex-row gap-x-16 px-4 text-cyan-900">
-                            <p>{`${state === 0 ? timeUntilThreshold : ""}`}</p>
-                            <p>{`${state === 0 ? timeUntilClosing : timeUntilDestroy}`}</p>
-                        </div>
+                        {
+                            (state === 0) ?
+                            <div className="flex flex-row text-cyan-900">
+                                <p>{`${timeUntilThreshold}`}</p>
+                                <p className="ml-auto">{`${timeUntilClosing}`}</p>
+                            </div> :
+                            <div className="flex flex-row gap-x-16 px-4 text-cyan-900">
+                                <p>{``}</p>
+                                <p>{`${timeUntilDestroy}`}</p>
+                            </div>
+                        }
                         <div className="flex flex-row gap-x-2 pl-20 text-cyan-900">
                             <p>{ state === 0 ? "Open" : "Closed" }</p>
                             { state === 0 ? <LockOpen /> : <LockClosed /> }

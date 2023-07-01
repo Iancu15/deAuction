@@ -181,7 +181,7 @@ export default function ChatPage() {
                 <div>
                     <div className="w-full flex items-center justify-center p-5 sticky top-0 bg-white">
                         <Input
-                            label="Search by Wallet Address"
+                            label="Search by wallet address"
                             placeholder="🔍 | 0x..."
                             onChange={(event) => {
                                 setBuddyAddress(event.target.value.toLowerCase())
