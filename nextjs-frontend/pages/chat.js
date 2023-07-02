@@ -26,18 +26,20 @@ export default function ChatPage() {
     }
 
     function scrollToBottom() {
-        containerRef.current.scrollIntoView(
-            {
-                behavior: 'smooth',
-                block: 'end',
-                inline: 'nearest'
-            }
-        )
+        if (containerRef.current !== null) {
+            containerRef.current.scrollIntoView(
+                {
+                    behavior: 'smooth',
+                    block: 'end',
+                    inline: 'nearest'
+                }
+            )
+        }
     }
 
     function showChat() {
         setStatesAreLoading(false)
-        setTimeout(scrollToBottom, 50)
+        setTimeout(scrollToBottom, 200)
     }
 
     async function updateTransactionHistory(provider) {
@@ -46,6 +48,10 @@ export default function ChatPage() {
                 const lowerCaseMyAddress = myAddress.toLowerCase()
                 const lowerCaseBuddyAddress = buddyAddress.toLowerCase()
                 const filteredHistory = myHistory.filter((tx) => {
+                    if (tx.to == null || tx.from == null) {
+                        return false
+                    }
+
                     const lowerCaseFrom = tx.from.toLowerCase()
                     const lowerCaseTo = tx.to.toLowerCase()
                     return (lowerCaseFrom == lowerCaseMyAddress && lowerCaseTo == lowerCaseBuddyAddress)
@@ -192,21 +198,20 @@ export default function ChatPage() {
                             errorMessage="Please enter a valid address"
                         />
                     </div>
-                    <div className="w-full flex items-center justify-center">
-                        <hr className="w-4/5" />
+                    <div className="pt-4">
+                        <Information
+                            information="The chat is public, anyone including you can see
+                            any message using Etherscan by searching the hash of the transaction.
+                            As such it's recommended to only use the chat to exchange
+                            usernames of another third party application that provides
+                            end-to-end encryption (e.g. Signal, Telegram, WhatsApp)."
+                            topic={<p className="text-red-600">Disclaimer</p>}
+                        />
                     </div>
                     {
                         checkBuddyAddress() ?
                         ( statesAreLoading ? (<Loading />) : (
                             (<div ref={containerRef} className="flex flex-col gap-8 p-4">
-                                <Information
-                                    information="The chat is public, anyone including you can see
-                                    any message using Etherscan by searching the hash of the transaction.
-                                    As such it's recommended to only use the chat to exchange
-                                    usernames of another third party application that provides
-                                    end-to-end encryption (e.g. Signal, Telegram, WhatsApp)."
-                                    topic={<p className="text-red-600">Disclaimer</p>}
-                                />
                                 {
                                     myTransactionHistory.map((tx) => {
                                         const date = getDate(tx.timestamp)

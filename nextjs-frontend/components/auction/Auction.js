@@ -967,7 +967,7 @@ export default function Auction({ contractAddress }) {
                                             disabled={performUpkeepIsLoading || performUpkeepIsFetching}
                                         />
                                     </div>
-                                    <div className="ml-auto pr-36">
+                                    <div className="ml-auto pr-44">
                                         <Button
                                             onClick={
                                                 async () => {
